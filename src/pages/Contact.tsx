@@ -17,7 +17,7 @@ const contactInfo = [
   {
     icon: Phone,
     title: "Téléphone",
-    content: "+221 XX XXX XX XX",
+    content: "+221 77 378 65 13",
     link: "tel:+221XXXXXXXX",
   },
   {
