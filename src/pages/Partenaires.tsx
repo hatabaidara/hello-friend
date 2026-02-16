@@ -1,58 +1,28 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink, Globe } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/Layout";
 
-const partners = [
-  {
-    id: 1,
-    name: "UNESCO",
-    description: "Partenaire pour les programmes d'éducation et de formation professionnelle.",
-    logo: "UNESCO",
-    type: "International",
-  },
-  {
-    id: 2,
-    name: "UNICEF",
-    description: "Collaboration pour la santé et le bien-être des jeunes.",
-    logo: "UNICEF",
-    type: "International",
-  },
-  {
-    id: 3,
-    name: "Banque Mondiale",
-    description: "Soutien aux projets d'emploi et d'entrepreneuriat des jeunes.",
-    logo: "WB",
-    type: "International",
-  },
-  {
-    id: 4,
-    name: "Ministère de la Jeunesse",
-    description: "Partenaire institutionnel pour les programmes de formation.",
-    logo: "MJ",
-    type: "National",
-  },
-  {
-    id: 5,
-    name: "Ministère de la Santé",
-    description: "Collaboration pour les caravanes santé et la sensibilisation.",
-    logo: "MS",
-    type: "National",
-  },
-  {
-    id: 6,
-    name: "Fondation Sonatel",
-    description: "Partenaire pour la formation aux métiers du numérique.",
-    logo: "FS",
-    type: "Privé",
-  },
-];
-
-const types = ["Tous", "International", "National", "Privé"];
-
 const Partenaires = () => {
+  const [partners, setPartners] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPartners = async () => {
+      const { data } = await supabase
+        .from("partners")
+        .select("*")
+        .eq("active", true)
+        .order("display_order");
+      setPartners(data || []);
+      setLoading(false);
+    };
+    fetchPartners();
+  }, []);
+
   return (
     <Layout>
-      {/* Hero Section */}
       <section className="pt-32 pb-20 hero-gradient">
         <div className="section-container">
           <motion.div
@@ -73,7 +43,6 @@ const Partenaires = () => {
         </div>
       </section>
 
-      {/* Stats */}
       <section className="py-16 bg-primary">
         <div className="section-container">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -91,9 +60,7 @@ const Partenaires = () => {
                 viewport={{ once: true }}
                 className="text-center"
               >
-                <p className="font-display text-4xl md:text-5xl font-bold text-primary-foreground mb-2">
-                  {stat.value}
-                </p>
+                <p className="font-display text-4xl md:text-5xl font-bold text-primary-foreground mb-2">{stat.value}</p>
                 <p className="text-primary-foreground/80">{stat.label}</p>
               </motion.div>
             ))}
@@ -101,7 +68,6 @@ const Partenaires = () => {
         </div>
       </section>
 
-      {/* Partners Grid */}
       <section className="py-24">
         <div className="section-container">
           <motion.div
@@ -120,50 +86,57 @@ const Partenaires = () => {
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {partners.map((partner, index) => (
-              <motion.div
-                key={partner.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1, duration: 0.5 }}
-                viewport={{ once: true }}
-                className="bg-card p-8 rounded-2xl card-hover group"
-              >
-                <div className="flex items-start justify-between mb-6">
-                  <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <span className="font-display font-bold text-primary text-xl">
-                      {partner.logo}
-                    </span>
+          {loading ? (
+            <p className="text-center text-muted-foreground">Chargement...</p>
+          ) : partners.length === 0 ? (
+            <p className="text-center text-muted-foreground">Aucun partenaire pour le moment.</p>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {partners.map((partner, index) => (
+                <motion.div
+                  key={partner.id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                  viewport={{ once: true }}
+                  className="bg-card p-8 rounded-2xl card-hover group"
+                >
+                  <div className="flex items-start justify-between mb-6">
+                    {partner.logo_url ? (
+                      <img src={partner.logo_url} alt={partner.name} className="w-16 h-16 rounded-xl object-contain" />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <span className="font-display font-bold text-primary text-xl">
+                          {partner.name.substring(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                    partner.type === "International" 
-                      ? "bg-accent/20 text-accent-foreground" 
-                      : partner.type === "National"
-                      ? "bg-primary/10 text-primary"
-                      : "bg-muted text-muted-foreground"
-                  }`}>
-                    {partner.type}
-                  </span>
-                </div>
-                <h3 className="font-display text-xl font-semibold text-foreground mb-3">
-                  {partner.name}
-                </h3>
-                <p className="text-muted-foreground leading-relaxed mb-4">
-                  {partner.description}
-                </p>
-                <button className="text-primary font-medium text-sm flex items-center gap-2 group-hover:gap-3 transition-all">
-                  <Globe className="w-4 h-4" />
-                  Voir le partenariat
-                  <ExternalLink className="w-4 h-4" />
-                </button>
-              </motion.div>
-            ))}
-          </div>
+                  <h3 className="font-display text-xl font-semibold text-foreground mb-3">
+                    {partner.name}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed mb-4">
+                    {partner.description}
+                  </p>
+                  {partner.website_url && (
+                    <a
+                      href={partner.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary font-medium text-sm flex items-center gap-2 group-hover:gap-3 transition-all"
+                    >
+                      <Globe className="w-4 h-4" />
+                      Visiter le site
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Become Partner CTA */}
       <section className="py-24 bg-secondary">
         <div className="section-container">
           <motion.div

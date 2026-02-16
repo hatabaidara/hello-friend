@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn, LogOut, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { name: "Accueil", path: "/" },
@@ -18,6 +19,7 @@ export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const { user, isAdmin, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -39,7 +41,6 @@ export const Header = () => {
     >
       <div className="section-container">
         <nav className="flex items-center justify-between">
-          {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
               <span className="text-primary-foreground font-display font-bold text-xl">GO</span>
@@ -50,7 +51,6 @@ export const Header = () => {
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => (
               <Link
@@ -67,29 +67,37 @@ export const Header = () => {
             ))}
           </div>
 
-          {/* CTA Button */}
-          <div className="hidden lg:block">
-            <Button className="btn-primary-gradient rounded-full px-6">
-              Nous rejoindre
-            </Button>
+          <div className="hidden lg:flex items-center gap-2">
+            {isAdmin && (
+              <Link to="/admin">
+                <Button variant="ghost" size="sm" className="rounded-full">
+                  <Shield className="w-4 h-4 mr-1" />Admin
+                </Button>
+              </Link>
+            )}
+            {user ? (
+              <Button onClick={signOut} variant="outline" size="sm" className="rounded-full">
+                <LogOut className="w-4 h-4 mr-1" />Déconnexion
+              </Button>
+            ) : (
+              <Link to="/auth">
+                <Button className="btn-primary-gradient rounded-full px-6">
+                  <LogIn className="w-4 h-4 mr-2" />Nous rejoindre
+                </Button>
+              </Link>
+            )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="lg:hidden p-2 rounded-lg hover:bg-primary/10 transition-colors"
             aria-label="Toggle menu"
           >
-            {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </nav>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -112,9 +120,22 @@ export const Header = () => {
                   {link.name}
                 </Link>
               ))}
-              <Button className="btn-primary-gradient rounded-full mt-2">
-                Nous rejoindre
-              </Button>
+              {isAdmin && (
+                <Link to="/admin" className="px-4 py-3 rounded-lg font-medium text-foreground hover:bg-primary/10 flex items-center gap-2">
+                  <Shield className="w-4 h-4" />Administration
+                </Link>
+              )}
+              {user ? (
+                <Button onClick={signOut} variant="outline" className="rounded-full mt-2">
+                  <LogOut className="w-4 h-4 mr-2" />Déconnexion
+                </Button>
+              ) : (
+                <Link to="/auth">
+                  <Button className="btn-primary-gradient rounded-full mt-2 w-full">
+                    <LogIn className="w-4 h-4 mr-2" />Nous rejoindre
+                  </Button>
+                </Link>
+              )}
             </div>
           </motion.div>
         )}

@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const socialLinks = [
   { icon: Facebook, href: "#", label: "Facebook" },
@@ -18,9 +21,31 @@ const quickLinks = [
 ];
 
 export const Footer = () => {
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleNewsletter = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setIsSubmitting(true);
+
+    const { error } = await supabase.from("newsletter_subscribers").insert({ email: email.trim() });
+    if (error) {
+      if (error.code === "23505") {
+        toast({ title: "Déjà inscrit", description: "Cet email est déjà abonné à notre newsletter." });
+      } else {
+        toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      }
+    } else {
+      toast({ title: "Inscription réussie !", description: "Bienvenue dans notre newsletter." });
+      setEmail("");
+    }
+    setIsSubmitting(false);
+  };
+
   return (
     <footer className="bg-primary-dark text-primary-foreground">
-      {/* Main Footer */}
       <div className="section-container py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {/* Brand */}
@@ -37,7 +62,6 @@ export const Footer = () => {
             <p className="text-primary-foreground/80 leading-relaxed">
               La jeunesse au cœur du développement. Ensemble, construisons le Sénégal de demain.
             </p>
-            {/* Social Links */}
             <div className="flex gap-3">
               {socialLinks.map((social) => (
                 <a
@@ -75,21 +99,15 @@ export const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 mt-0.5 flex-shrink-0" />
-                <span className="text-primary-foreground/80">
-                  Dakar, Sénégal
-                </span>
+                <span className="text-primary-foreground/80">Dakar, Sénégal</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 flex-shrink-0" />
-                <span className="text-primary-foreground/80">
-                  +221 XX XXX XX XX
-                </span>
+                <span className="text-primary-foreground/80">+221 77 378 65 13</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 flex-shrink-0" />
-                <span className="text-primary-foreground/80">
-                  contact@generation-original.sn
-                </span>
+                <span className="text-primary-foreground/80">contact@generation-original.sn</span>
               </li>
             </ul>
           </div>
@@ -100,36 +118,36 @@ export const Footer = () => {
             <p className="text-primary-foreground/80 mb-4">
               Restez informé de nos actions et événements.
             </p>
-            <form className="flex flex-col gap-3">
+            <form onSubmit={handleNewsletter} className="flex flex-col gap-3">
               <input
                 type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Votre email"
+                required
                 className="px-4 py-3 rounded-lg bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/50 focus:outline-none focus:border-accent"
               />
               <button
                 type="submit"
-                className="px-4 py-3 rounded-lg bg-accent text-accent-foreground font-semibold hover:bg-accent/90 transition-colors"
+                disabled={isSubmitting}
+                className="px-4 py-3 rounded-lg bg-accent text-accent-foreground font-semibold hover:bg-accent/90 transition-colors disabled:opacity-50"
               >
-                S'abonner
+                {isSubmitting ? "Inscription..." : "S'abonner"}
               </button>
             </form>
           </div>
         </div>
       </div>
 
-      {/* Bottom Bar */}
       <div className="border-t border-primary-foreground/10">
         <div className="section-container py-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-primary-foreground/60 text-sm">
             © {new Date().getFullYear()} Génération Original. Tous droits réservés.
           </p>
           <div className="flex gap-6 text-sm">
-            <a href="#" className="text-primary-foreground/60 hover:text-primary-foreground transition-colors">
-              Mentions légales
-            </a>
-            <a href="#" className="text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+            <Link to="/confidentialite" className="text-primary-foreground/60 hover:text-primary-foreground transition-colors">
               Politique de confidentialité
-            </a>
+            </Link>
           </div>
         </div>
       </div>
