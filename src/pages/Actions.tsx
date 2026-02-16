@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
-import { MapPin, Calendar, Users, ArrowRight } from "lucide-react";
+import { MapPin, Calendar, Users, ArrowRight, MessageCircle, TrendingUp, Award, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
+import Commentaires from "@/components/Commentaires";
 import actionRally from "@/assets/action-rally.jpg";
 import actionEducation from "@/assets/action-education.jpg";
 import actionHealth from "@/assets/action-health.jpg";
@@ -216,6 +217,129 @@ const Actions = () => {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* Section Travail Politique Détaillé */}
+      <section className="py-20 bg-muted/30">
+        <div className="section-container">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="font-display text-3xl md:text-4xl font-bold mb-6">
+              Notre Travail Politique au Quotidien
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Des actions concrètes pour un Sénégal meilleur, basées sur l'écoute, 
+              la transparence et l'engagement citoyen.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            {[
+              {
+                icon: <Target className="h-8 w-8" />,
+                title: "Mission",
+                description: "Servir les citoyens avec intégrité et dévouement",
+                color: "text-blue-600",
+                bgColor: "bg-blue-100"
+              },
+              {
+                icon: <TrendingUp className="h-8 w-8" />,
+                title: "Résultats",
+                description: "50K+ jeunes formés, 200+ villages impactés",
+                color: "text-green-600", 
+                bgColor: "bg-green-100"
+              },
+              {
+                icon: <Award className="h-8 w-8" />,
+                title: "Engagement",
+                description: "Présent sur le terrain 365 jours par an",
+                color: "text-purple-600",
+                bgColor: "bg-purple-100"
+              },
+              {
+                icon: <Users className="h-8 w-8" />,
+                title: "Inclusion",
+                description: "Toutes les régions, toutes les communautés",
+                color: "text-orange-600",
+                bgColor: "bg-orange-100"
+              }
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1, duration: 0.5 }}
+                viewport={{ once: true }}
+                className="text-center"
+              >
+                <div className={`w-16 h-16 ${item.bgColor} rounded-full flex items-center justify-center mx-auto mb-4`}>
+                  <div className={item.color}>{item.icon}</div>
+                </div>
+                <h3 className="font-semibold text-lg mb-2">{item.title}</h3>
+                <p className="text-muted-foreground">{item.description}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <div className="bg-card p-8 rounded-2xl shadow-lg">
+            <h3 className="text-2xl font-bold mb-6 text-center">Nos Axes d'Action Prioritaires</h3>
+            <div className="grid md:grid-cols-2 gap-6">
+              {[
+                {
+                  title: "Éducation et Formation",
+                  description: "Programmes d'alphabétisation, formations professionnelles, bourses d'études",
+                  progress: 85
+                },
+                {
+                  title: "Santé et Bien-être",
+                  description: "Caravanes médicales, accès aux soins, prévention et sensibilisation",
+                  progress: 75
+                },
+                {
+                  title: "Développement Économique",
+                  description: "Soutien aux PME, création d'emplois, formation entrepreneuriale",
+                  progress: 70
+                },
+                {
+                  title: "Infrastructure Locale",
+                  description: "Adduction d'eau, routes, électricité, équipements publics",
+                  progress: 60
+                }
+              ].map((axe, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: index % 2 === 0 ? -20 : 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                  viewport={{ once: true }}
+                  className="p-4 border rounded-lg"
+                >
+                  <h4 className="font-semibold mb-2">{axe.title}</h4>
+                  <p className="text-sm text-muted-foreground mb-3">{axe.description}</p>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      whileInView={{ width: `${axe.progress}%` }}
+                      transition={{ duration: 1, delay: 0.5 }}
+                      className="bg-blue-600 h-2 rounded-full"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{axe.progress}% réalisé</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Section Commentaires */}
+      <section className="py-20">
+        <Commentaires />
       </section>
 
       {/* CTA */}
