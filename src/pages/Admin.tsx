@@ -9,19 +9,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import {
-  Users, Newspaper, Handshake, Mail, Trash2, Edit, Plus, Eye, EyeOff, Save, X
+  Users, Newspaper, Handshake, Mail, Trash2, Edit, Plus, Eye, EyeOff, Save, X, BarChart3, TrendingUp, FileText, UserCheck
 } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 
-type Tab = "members" | "articles" | "partners" | "newsletter";
+type Tab = "analytics" | "members" | "articles" | "partners" | "newsletter";
 
 const Admin = () => {
   const { user, isAdmin, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [tab, setTab] = useState<Tab>("members");
+  const [tab, setTab] = useState<Tab>("analytics");
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -33,6 +33,7 @@ const Admin = () => {
   if (!isAdmin) return null;
 
   const tabs: { key: Tab; label: string; icon: any }[] = [
+    { key: "analytics", label: "Tableau de bord", icon: BarChart3 },
     { key: "members", label: "Membres", icon: Users },
     { key: "articles", label: "Articles", icon: Newspaper },
     { key: "partners", label: "Partenaires", icon: Handshake },
@@ -64,6 +65,7 @@ const Admin = () => {
 
       <section className="py-12">
         <div className="section-container">
+          {tab === "analytics" && <AnalyticsTab />}
           {tab === "members" && <MembersTab />}
           {tab === "articles" && <ArticlesTab />}
           {tab === "partners" && <PartnersTab />}
@@ -71,6 +73,166 @@ const Admin = () => {
         </div>
       </section>
     </Layout>
+  );
+};
+
+// Analytics Tab
+const AnalyticsTab = () => {
+  const [stats, setStats] = useState({
+    totalMembers: 0,
+    totalArticles: 0,
+    publishedArticles: 0,
+    draftArticles: 0,
+    totalPartners: 0,
+    totalSubscribers: 0,
+    recentMembers: [] as any[],
+    recentArticles: [] as any[],
+    membersByMonth: [] as { month: string; count: number }[],
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      const [membersRes, articlesRes, partnersRes, subscribersRes] = await Promise.all([
+        supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+        supabase.from("articles").select("*").order("created_at", { ascending: false }),
+        supabase.from("partners").select("id", { count: "exact" }),
+        supabase.from("newsletter_subscribers").select("id", { count: "exact" }),
+      ]);
+
+      const members = membersRes.data || [];
+      const articles = articlesRes.data || [];
+
+      // Group members by month
+      const monthMap = new Map<string, number>();
+      members.forEach((m) => {
+        const d = new Date(m.created_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        monthMap.set(key, (monthMap.get(key) || 0) + 1);
+      });
+      const membersByMonth = Array.from(monthMap.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(-6)
+        .map(([month, count]) => {
+          const [y, m] = month.split("-");
+          const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
+          return { month: label, count };
+        });
+
+      setStats({
+        totalMembers: members.length,
+        totalArticles: articles.length,
+        publishedArticles: articles.filter((a) => a.published).length,
+        draftArticles: articles.filter((a) => !a.published).length,
+        totalPartners: partnersRes.count || 0,
+        totalSubscribers: subscribersRes.count || 0,
+        recentMembers: members.slice(0, 5),
+        recentArticles: articles.slice(0, 5),
+        membersByMonth,
+      });
+      setLoading(false);
+    };
+    fetchStats();
+  }, []);
+
+  if (loading) return <p>Chargement des statistiques...</p>;
+
+  const cards = [
+    { label: "Membres", value: stats.totalMembers, icon: Users, color: "bg-primary/10 text-primary" },
+    { label: "Articles publiés", value: stats.publishedArticles, icon: FileText, color: "bg-accent/10 text-accent-foreground" },
+    { label: "Brouillons", value: stats.draftArticles, icon: Edit, color: "bg-muted text-muted-foreground" },
+    { label: "Partenaires", value: stats.totalPartners, icon: Handshake, color: "bg-primary/10 text-primary" },
+    { label: "Abonnés newsletter", value: stats.totalSubscribers, icon: Mail, color: "bg-accent/10 text-accent-foreground" },
+    { label: "Total articles", value: stats.totalArticles, icon: Newspaper, color: "bg-muted text-muted-foreground" },
+  ];
+
+  // Simple bar chart
+  const maxCount = Math.max(...stats.membersByMonth.map((m) => m.count), 1);
+
+  return (
+    <div className="space-y-8">
+      <h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+        <TrendingUp className="w-6 h-6 text-primary" /> Vue d'ensemble
+      </h2>
+
+      {/* Metric cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        {cards.map((c) => (
+          <div key={c.label} className="bg-card rounded-2xl p-5 shadow-sm text-center">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3 ${c.color}`}>
+              <c.icon className="w-5 h-5" />
+            </div>
+            <p className="text-2xl font-bold text-foreground">{c.value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{c.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Members chart + Recent activity */}
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Bar chart */}
+        <div className="bg-card rounded-2xl p-6 shadow-sm">
+          <h3 className="font-display text-lg font-semibold text-foreground mb-4">Inscriptions récentes</h3>
+          {stats.membersByMonth.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucune donnée disponible</p>
+          ) : (
+            <div className="flex items-end gap-2 h-40">
+              {stats.membersByMonth.map((m) => (
+                <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+                  <span className="text-xs font-medium text-foreground">{m.count}</span>
+                  <div
+                    className="w-full rounded-t-lg bg-primary/80 transition-all duration-500"
+                    style={{ height: `${(m.count / maxCount) * 100}%`, minHeight: 4 }}
+                  />
+                  <span className="text-[10px] text-muted-foreground">{m.month}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent members */}
+        <div className="bg-card rounded-2xl p-6 shadow-sm">
+          <h3 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-primary" /> Derniers membres
+          </h3>
+          <div className="space-y-3">
+            {stats.recentMembers.map((m) => (
+              <div key={m.id} className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{m.full_name || "Sans nom"}</p>
+                  <p className="text-xs text-muted-foreground">{m.email}</p>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(m.created_at).toLocaleDateString("fr-FR")}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent articles */}
+      <div className="bg-card rounded-2xl p-6 shadow-sm">
+        <h3 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <Newspaper className="w-5 h-5 text-primary" /> Derniers articles
+        </h3>
+        <div className="space-y-3">
+          {stats.recentArticles.map((a) => (
+            <div key={a.id} className="flex items-center justify-between">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${a.published ? "bg-primary" : "bg-muted-foreground"}`} />
+                <p className="text-sm font-medium text-foreground truncate">{a.title}</p>
+              </div>
+              <span className="text-xs text-muted-foreground flex-shrink-0 ml-4">
+                {new Date(a.created_at).toLocaleDateString("fr-FR")}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };
 
