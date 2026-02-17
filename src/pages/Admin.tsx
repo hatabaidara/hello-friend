@@ -1,39 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import {
-  Users, Newspaper, Handshake, Mail, Trash2, Edit, Plus, Eye, EyeOff, Save, X, BarChart3, TrendingUp, FileText, UserCheck
+  Users, Newspaper, Handshake, Mail, Trash2, Edit, Plus, Eye, EyeOff, Save, X,
+  BarChart3, TrendingUp, FileText, UserCheck, Download, Filter, Activity, Shield, ChevronDown,
 } from "lucide-react";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  mockMembers, mockArticles, weeklyActivity, monthlyGrowth,
+  exportToCSV, exportToJSON,
+  type MockMember, type MockArticle, type UserRole, type ArticleStatus,
+} from "@/data/mockData";
 
-type Tab = "analytics" | "members" | "articles" | "partners" | "newsletter";
+type Tab = "analytics" | "members" | "articles" | "partners" | "newsletter" | "engagement";
 
 const Admin = () => {
-  const { user, isAdmin, isLoading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
   const [tab, setTab] = useState<Tab>("analytics");
 
-  useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
-      navigate("/auth");
-    }
-  }, [user, isAdmin, authLoading, navigate]);
-
-  if (authLoading) return <Layout><div className="pt-32 pb-20 text-center">Chargement...</div></Layout>;
-  if (!isAdmin) return null;
-
   const tabs: { key: Tab; label: string; icon: any }[] = [
-    { key: "analytics", label: "Tableau de bord", icon: BarChart3 },
+    { key: "analytics", label: "Vue d'ensemble", icon: BarChart3 },
+    { key: "engagement", label: "Engagement", icon: Activity },
     { key: "members", label: "Membres", icon: Users },
     { key: "articles", label: "Articles", icon: Newspaper },
     { key: "partners", label: "Partenaires", icon: Handshake },
@@ -44,16 +39,20 @@ const Admin = () => {
     <Layout>
       <section className="pt-32 pb-8 hero-gradient">
         <div className="section-container">
-          <h1 className="font-display text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-            Administration
-          </h1>
+          <div className="flex items-center gap-3 mb-2">
+            <Shield className="w-8 h-8 text-primary-foreground/80" />
+            <h1 className="font-display text-3xl md:text-4xl font-bold text-primary-foreground">
+              Administration
+            </h1>
+          </div>
+          <p className="text-primary-foreground/70 mb-6 text-sm">Données simulées • Aucune connexion backend requise</p>
           <div className="flex flex-wrap gap-2">
             {tabs.map((t) => (
               <Button
                 key={t.key}
                 variant={tab === t.key ? "default" : "outline"}
                 onClick={() => setTab(t.key)}
-                className={`rounded-full ${tab === t.key ? "btn-primary-gradient" : "bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/20"}`}
+                className={`rounded-full text-sm ${tab === t.key ? "btn-primary-gradient" : "bg-primary-foreground/10 text-primary-foreground border-primary-foreground/20 hover:bg-primary-foreground/20"}`}
               >
                 <t.icon className="w-4 h-4 mr-2" />
                 {t.label}
@@ -66,6 +65,7 @@ const Admin = () => {
       <section className="py-12">
         <div className="section-container">
           {tab === "analytics" && <AnalyticsTab />}
+          {tab === "engagement" && <EngagementTab />}
           {tab === "members" && <MembersTab />}
           {tab === "articles" && <ArticlesTab />}
           {tab === "partners" && <PartnersTab />}
@@ -76,79 +76,25 @@ const Admin = () => {
   );
 };
 
-// Analytics Tab
+/* ── Analytics Tab ── */
 const AnalyticsTab = () => {
-  const [stats, setStats] = useState({
-    totalMembers: 0,
-    totalArticles: 0,
-    publishedArticles: 0,
-    draftArticles: 0,
-    totalPartners: 0,
-    totalSubscribers: 0,
-    recentMembers: [] as any[],
-    recentArticles: [] as any[],
-    membersByMonth: [] as { month: string; count: number }[],
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      setLoading(true);
-      const [membersRes, articlesRes, partnersRes, subscribersRes] = await Promise.all([
-        supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-        supabase.from("articles").select("*").order("created_at", { ascending: false }),
-        supabase.from("partners").select("id", { count: "exact" }),
-        supabase.from("newsletter_subscribers").select("id", { count: "exact" }),
-      ]);
-
-      const members = membersRes.data || [];
-      const articles = articlesRes.data || [];
-
-      // Group members by month
-      const monthMap = new Map<string, number>();
-      members.forEach((m) => {
-        const d = new Date(m.created_at);
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-        monthMap.set(key, (monthMap.get(key) || 0) + 1);
-      });
-      const membersByMonth = Array.from(monthMap.entries())
-        .sort(([a], [b]) => a.localeCompare(b))
-        .slice(-6)
-        .map(([month, count]) => {
-          const [y, m] = month.split("-");
-          const label = new Date(parseInt(y), parseInt(m) - 1).toLocaleDateString("fr-FR", { month: "short", year: "2-digit" });
-          return { month: label, count };
-        });
-
-      setStats({
-        totalMembers: members.length,
-        totalArticles: articles.length,
-        publishedArticles: articles.filter((a) => a.published).length,
-        draftArticles: articles.filter((a) => !a.published).length,
-        totalPartners: partnersRes.count || 0,
-        totalSubscribers: subscribersRes.count || 0,
-        recentMembers: members.slice(0, 5),
-        recentArticles: articles.slice(0, 5),
-        membersByMonth,
-      });
-      setLoading(false);
-    };
-    fetchStats();
-  }, []);
-
-  if (loading) return <p>Chargement des statistiques...</p>;
+  const totalMembers = mockMembers.length;
+  const publishedArticles = mockArticles.filter((a) => a.published).length;
+  const draftArticles = mockArticles.filter((a) => !a.published).length;
+  const totalViews = mockArticles.reduce((s, a) => s + a.views, 0);
+  const admins = mockMembers.filter((m) => m.role === "admin").length;
+  const moderators = mockMembers.filter((m) => m.role === "moderator").length;
 
   const cards = [
-    { label: "Membres", value: stats.totalMembers, icon: Users, color: "bg-primary/10 text-primary" },
-    { label: "Articles publiés", value: stats.publishedArticles, icon: FileText, color: "bg-accent/10 text-accent-foreground" },
-    { label: "Brouillons", value: stats.draftArticles, icon: Edit, color: "bg-muted text-muted-foreground" },
-    { label: "Partenaires", value: stats.totalPartners, icon: Handshake, color: "bg-primary/10 text-primary" },
-    { label: "Abonnés newsletter", value: stats.totalSubscribers, icon: Mail, color: "bg-accent/10 text-accent-foreground" },
-    { label: "Total articles", value: stats.totalArticles, icon: Newspaper, color: "bg-muted text-muted-foreground" },
+    { label: "Total membres", value: totalMembers, icon: Users, color: "bg-primary/10 text-primary" },
+    { label: "Articles publiés", value: publishedArticles, icon: FileText, color: "bg-primary/10 text-primary" },
+    { label: "Brouillons", value: draftArticles, icon: Edit, color: "bg-muted text-muted-foreground" },
+    { label: "Total vues", value: totalViews.toLocaleString("fr-FR"), icon: Eye, color: "bg-accent/20 text-accent-foreground" },
+    { label: "Administrateurs", value: admins, icon: Shield, color: "bg-primary/10 text-primary" },
+    { label: "Modérateurs", value: moderators, icon: UserCheck, color: "bg-accent/20 text-accent-foreground" },
   ];
 
-  // Simple bar chart
-  const maxCount = Math.max(...stats.membersByMonth.map((m) => m.count), 1);
+  const maxGrowth = Math.max(...monthlyGrowth.map((m) => m.members), 1);
 
   return (
     <div className="space-y-8">
@@ -156,405 +102,499 @@ const AnalyticsTab = () => {
         <TrendingUp className="w-6 h-6 text-primary" /> Vue d'ensemble
       </h2>
 
-      {/* Metric cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {cards.map((c) => (
-          <div key={c.label} className="bg-card rounded-2xl p-5 shadow-sm text-center">
+          <motion.div
+            key={c.label}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card rounded-2xl p-5 shadow-sm text-center card-hover"
+          >
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-3 ${c.color}`}>
               <c.icon className="w-5 h-5" />
             </div>
             <p className="text-2xl font-bold text-foreground">{c.value}</p>
             <p className="text-xs text-muted-foreground mt-1">{c.label}</p>
-          </div>
+          </motion.div>
         ))}
       </div>
 
-      {/* Members chart + Recent activity */}
+      {/* Growth chart */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Bar chart */}
         <div className="bg-card rounded-2xl p-6 shadow-sm">
-          <h3 className="font-display text-lg font-semibold text-foreground mb-4">Inscriptions récentes</h3>
-          {stats.membersByMonth.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucune donnée disponible</p>
-          ) : (
-            <div className="flex items-end gap-2 h-40">
-              {stats.membersByMonth.map((m) => (
-                <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-xs font-medium text-foreground">{m.count}</span>
-                  <div
-                    className="w-full rounded-t-lg bg-primary/80 transition-all duration-500"
-                    style={{ height: `${(m.count / maxCount) * 100}%`, minHeight: 4 }}
-                  />
-                  <span className="text-[10px] text-muted-foreground">{m.month}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <h3 className="font-display text-lg font-semibold text-foreground mb-4">Croissance des membres</h3>
+          <div className="flex items-end gap-2 h-44">
+            {monthlyGrowth.map((m) => (
+              <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-xs font-medium text-foreground">{m.members}</span>
+                <div
+                  className="w-full rounded-t-lg bg-primary/80 transition-all duration-500"
+                  style={{ height: `${(m.members / maxGrowth) * 100}%`, minHeight: 4 }}
+                />
+                <span className="text-[10px] text-muted-foreground">{m.month}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* Recent members */}
+        {/* Role distribution */}
+        <div className="bg-card rounded-2xl p-6 shadow-sm">
+          <h3 className="font-display text-lg font-semibold text-foreground mb-4">Répartition par rôle</h3>
+          <div className="space-y-4 mt-6">
+            {(["admin", "moderator", "user"] as UserRole[]).map((role) => {
+              const count = mockMembers.filter((m) => m.role === role).length;
+              const pct = Math.round((count / totalMembers) * 100);
+              const labels: Record<UserRole, string> = { admin: "Administrateurs", moderator: "Modérateurs", user: "Utilisateurs" };
+              const colors: Record<UserRole, string> = { admin: "bg-primary", moderator: "bg-accent", user: "bg-muted-foreground/40" };
+              return (
+                <div key={role}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-foreground font-medium">{labels[role]}</span>
+                    <span className="text-muted-foreground">{count} ({pct}%)</span>
+                  </div>
+                  <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full ${colors[role]} transition-all duration-700`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent members & articles */}
+      <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-card rounded-2xl p-6 shadow-sm">
           <h3 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
             <UserCheck className="w-5 h-5 text-primary" /> Derniers membres
           </h3>
           <div className="space-y-3">
-            {stats.recentMembers.map((m) => (
+            {mockMembers.slice(0, 5).map((m) => (
               <div key={m.id} className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-foreground">{m.full_name || "Sans nom"}</p>
-                  <p className="text-xs text-muted-foreground">{m.email}</p>
+                  <p className="text-sm font-medium text-foreground">{m.full_name}</p>
+                  <p className="text-xs text-muted-foreground">{m.email} • {m.city}</p>
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(m.created_at).toLocaleDateString("fr-FR")}
+                <span className={`text-xs px-2 py-0.5 rounded-full ${m.role === "admin" ? "bg-primary/10 text-primary" : m.role === "moderator" ? "bg-accent/20 text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
+                  {m.role}
                 </span>
               </div>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Recent articles */}
-      <div className="bg-card rounded-2xl p-6 shadow-sm">
-        <h3 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-          <Newspaper className="w-5 h-5 text-primary" /> Derniers articles
-        </h3>
-        <div className="space-y-3">
-          {stats.recentArticles.map((a) => (
-            <div key={a.id} className="flex items-center justify-between">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${a.published ? "bg-primary" : "bg-muted-foreground"}`} />
-                <p className="text-sm font-medium text-foreground truncate">{a.title}</p>
-              </div>
-              <span className="text-xs text-muted-foreground flex-shrink-0 ml-4">
-                {new Date(a.created_at).toLocaleDateString("fr-FR")}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Members Tab
-const MembersTab = () => {
-  const [members, setMembers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  const fetchMembers = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.from("profiles").select("*").order("created_at", { ascending: false });
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else setMembers(data || []);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchMembers(); }, []);
-
-  const deleteMember = async (userId: string) => {
-    const { error } = await supabase.from("profiles").delete().eq("user_id", userId);
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { toast({ title: "Membre supprimé" }); fetchMembers(); }
-  };
-
-  return (
-    <div>
-      <h2 className="font-display text-2xl font-bold text-foreground mb-6">Gestion des membres ({members.length})</h2>
-      {loading ? <p>Chargement...</p> : (
-        <div className="bg-card rounded-2xl overflow-hidden shadow-sm">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Téléphone</TableHead>
-                <TableHead>Ville</TableHead>
-                <TableHead>Inscrit le</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.map((m) => (
-                <TableRow key={m.id}>
-                  <TableCell className="font-medium">{m.full_name || "—"}</TableCell>
-                  <TableCell>{m.email}</TableCell>
-                  <TableCell>{m.phone || "—"}</TableCell>
-                  <TableCell>{m.city || "—"}</TableCell>
-                  <TableCell>{new Date(m.created_at).toLocaleDateString("fr-FR")}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => deleteMember(m.user_id)} className="text-destructive hover:text-destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Articles Tab
-const ArticlesTab = () => {
-  const [articles, setArticles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<any | null>(null);
-  const [form, setForm] = useState({ title: "", slug: "", excerpt: "", content: "", image_url: "", category: "actualite", published: false });
-  const { toast } = useToast();
-
-  const fetchArticles = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.from("articles").select("*").order("created_at", { ascending: false });
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else setArticles(data || []);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchArticles(); }, []);
-
-  const resetForm = () => {
-    setForm({ title: "", slug: "", excerpt: "", content: "", image_url: "", category: "actualite", published: false });
-    setEditing(null);
-  };
-
-  const generateSlug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-
-  const handleSave = async () => {
-    const slug = form.slug || generateSlug(form.title);
-    const payload = { ...form, slug };
-
-    if (editing) {
-      const { error } = await supabase.from("articles").update(payload).eq("id", editing.id);
-      if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
-      toast({ title: "Article mis à jour" });
-    } else {
-      const { error } = await supabase.from("articles").insert(payload);
-      if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
-      toast({ title: "Article créé" });
-    }
-    resetForm();
-    fetchArticles();
-  };
-
-  const deleteArticle = async (id: string) => {
-    const { error } = await supabase.from("articles").delete().eq("id", id);
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { toast({ title: "Article supprimé" }); fetchArticles(); }
-  };
-
-  const editArticle = (a: any) => {
-    setEditing(a);
-    setForm({ title: a.title, slug: a.slug, excerpt: a.excerpt || "", content: a.content || "", image_url: a.image_url || "", category: a.category || "actualite", published: a.published });
-  };
-
-  const togglePublish = async (a: any) => {
-    await supabase.from("articles").update({ published: !a.published }).eq("id", a.id);
-    fetchArticles();
-  };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-display text-2xl font-bold text-foreground">Articles ({articles.length})</h2>
-        {!editing && (
-          <Button onClick={() => setEditing({})} className="btn-primary-gradient rounded-full">
-            <Plus className="w-4 h-4 mr-2" />Nouvel article
-          </Button>
-        )}
-      </div>
-
-      {editing !== null && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-card p-6 rounded-2xl shadow-sm mb-8 space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-display text-lg font-semibold">{editing?.id ? "Modifier" : "Nouvel"} article</h3>
-            <Button variant="ghost" size="icon" onClick={resetForm}><X className="w-4 h-4" /></Button>
-          </div>
-          <Input placeholder="Titre" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-          <Input placeholder="Catégorie" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
-          <Input placeholder="URL image" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
-          <Textarea placeholder="Extrait" value={form.excerpt} onChange={(e) => setForm({ ...form, excerpt: e.target.value })} rows={2} />
-          <Textarea placeholder="Contenu de l'article" value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} rows={8} />
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.published} onChange={(e) => setForm({ ...form, published: e.target.checked })} className="rounded" />
-              Publié
-            </label>
-            <Button onClick={handleSave} className="btn-primary-gradient rounded-full">
-              <Save className="w-4 h-4 mr-2" />Enregistrer
-            </Button>
-          </div>
-        </motion.div>
-      )}
-
-      {loading ? <p>Chargement...</p> : (
-        <div className="space-y-4">
-          {articles.map((a) => (
-            <div key={a.id} className="bg-card p-4 rounded-xl shadow-sm flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`w-2 h-2 rounded-full ${a.published ? "bg-primary" : "bg-muted-foreground"}`} />
-                  <h3 className="font-semibold text-foreground truncate">{a.title}</h3>
+        <div className="bg-card rounded-2xl p-6 shadow-sm">
+          <h3 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Newspaper className="w-5 h-5 text-primary" /> Articles populaires
+          </h3>
+          <div className="space-y-3">
+            {[...mockArticles].sort((a, b) => b.views - a.views).slice(0, 5).map((a) => (
+              <div key={a.id} className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`w-2 h-2 rounded-full flex-shrink-0 ${a.published ? "bg-primary" : "bg-muted-foreground"}`} />
+                  <p className="text-sm font-medium text-foreground truncate">{a.title}</p>
                 </div>
-                <p className="text-sm text-muted-foreground">{a.category} • {new Date(a.created_at).toLocaleDateString("fr-FR")}</p>
+                <span className="text-xs text-muted-foreground flex-shrink-0 ml-4">{a.views} vues</span>
               </div>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="icon" onClick={() => togglePublish(a)} title={a.published ? "Dépublier" : "Publier"}>
-                  {a.published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => editArticle(a)}><Edit className="w-4 h-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => deleteArticle(a.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
 
-// Partners Tab
-const PartnersTab = () => {
-  const [partners, setPartners] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<any | null>(null);
-  const [form, setForm] = useState({ name: "", description: "", logo_url: "", website_url: "", display_order: 0 });
+/* ── Engagement Tab ── */
+const EngagementTab = () => {
+  const maxActive = Math.max(...weeklyActivity.map((w) => w.activeMembers), 1);
+  const maxViews = Math.max(...weeklyActivity.map((w) => w.articleViews), 1);
+
+  const avgActive = Math.round(weeklyActivity.reduce((s, w) => s + w.activeMembers, 0) / weeklyActivity.length);
+  const avgViews = Math.round(weeklyActivity.reduce((s, w) => s + w.articleViews, 0) / weeklyActivity.length);
+  const totalNewMembers = weeklyActivity.reduce((s, w) => s + w.newMembers, 0);
+
+  // Retention rate (simulated)
+  const retentionWeeks = weeklyActivity.map((w, i) => ({
+    week: w.week,
+    rate: Math.min(95, 60 + Math.random() * 30 + (i * 0.5)),
+  }));
+
+  return (
+    <div className="space-y-8">
+      <h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+        <Activity className="w-6 h-6 text-primary" /> Rétention & Engagement
+      </h2>
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[
+          { label: "Membres actifs / semaine (moy.)", value: avgActive, icon: Users },
+          { label: "Vues articles / semaine (moy.)", value: avgViews, icon: Eye },
+          { label: "Nouveaux membres (12 sem.)", value: totalNewMembers, icon: TrendingUp },
+        ].map((c) => (
+          <motion.div key={c.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <c.icon className="w-5 h-5 text-primary" />
+              </div>
+              <p className="text-sm text-muted-foreground">{c.label}</p>
+            </div>
+            <p className="text-3xl font-bold text-foreground">{c.value}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Weekly active members chart */}
+      <div className="bg-card rounded-2xl p-6 shadow-sm">
+        <h3 className="font-display text-lg font-semibold text-foreground mb-4">Membres actifs par semaine</h3>
+        <div className="flex items-end gap-1.5 h-48">
+          {weeklyActivity.map((w) => (
+            <div key={w.week} className="flex-1 flex flex-col items-center gap-1">
+              <span className="text-[10px] font-medium text-foreground">{w.activeMembers}</span>
+              <div
+                className="w-full rounded-t-lg bg-primary/70 transition-all duration-500"
+                style={{ height: `${(w.activeMembers / maxActive) * 100}%`, minHeight: 4 }}
+              />
+              <span className="text-[9px] text-muted-foreground leading-tight">{w.week}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Article views + Retention side by side */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="bg-card rounded-2xl p-6 shadow-sm">
+          <h3 className="font-display text-lg font-semibold text-foreground mb-4">Vues des articles par semaine</h3>
+          <div className="flex items-end gap-1.5 h-40">
+            {weeklyActivity.map((w) => (
+              <div key={w.week} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-[10px] font-medium text-foreground">{w.articleViews}</span>
+                <div
+                  className="w-full rounded-t-lg bg-accent/80 transition-all duration-500"
+                  style={{ height: `${(w.articleViews / maxViews) * 100}%`, minHeight: 4 }}
+                />
+                <span className="text-[9px] text-muted-foreground">{w.week}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-card rounded-2xl p-6 shadow-sm">
+          <h3 className="font-display text-lg font-semibold text-foreground mb-4">Taux de rétention (%)</h3>
+          <div className="flex items-end gap-1.5 h-40">
+            {retentionWeeks.map((w) => (
+              <div key={w.week} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-[10px] font-medium text-foreground">{Math.round(w.rate)}%</span>
+                <div
+                  className="w-full rounded-t-lg bg-primary/60 transition-all duration-500"
+                  style={{ height: `${w.rate}%`, minHeight: 4 }}
+                />
+                <span className="text-[9px] text-muted-foreground">{w.week}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── Members Tab with filters & export ── */
+const MembersTab = () => {
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [cityFilter, setCityFilter] = useState<string>("all");
   const { toast } = useToast();
 
-  const fetchPartners = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.from("partners").select("*").order("display_order");
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else setPartners(data || []);
-    setLoading(false);
+  const cities = useMemo(() => [...new Set(mockMembers.map((m) => m.city))].sort(), []);
+
+  const filtered = useMemo(() => {
+    return mockMembers.filter((m) => {
+      if (roleFilter !== "all" && m.role !== roleFilter) return false;
+      if (cityFilter !== "all" && m.city !== cityFilter) return false;
+      if (search && !m.full_name.toLowerCase().includes(search.toLowerCase()) && !m.email.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
+  }, [search, roleFilter, cityFilter]);
+
+  const handleExport = (format: "csv" | "json") => {
+    const data = filtered.map(({ id, full_name, email, phone, city, role, created_at }) => ({ id, full_name, email, phone, city, role, created_at }));
+    if (format === "csv") exportToCSV(data, "membres");
+    else exportToJSON(data, "membres");
+    toast({ title: `Export ${format.toUpperCase()} réussi`, description: `${data.length} membres exportés.` });
   };
 
-  useEffect(() => { fetchPartners(); }, []);
+  const roleLabels: Record<string, string> = { admin: "Admin", moderator: "Modérateur", user: "Utilisateur" };
 
-  const resetForm = () => { setForm({ name: "", description: "", logo_url: "", website_url: "", display_order: 0 }); setEditing(null); };
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <h2 className="font-display text-2xl font-bold text-foreground">Membres ({filtered.length})</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => handleExport("csv")} className="rounded-full">
+            <Download className="w-4 h-4 mr-1" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleExport("json")} className="rounded-full">
+            <Download className="w-4 h-4 mr-1" /> JSON
+          </Button>
+        </div>
+      </div>
 
-  const handleSave = async () => {
-    if (editing?.id) {
-      const { error } = await supabase.from("partners").update(form).eq("id", editing.id);
-      if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
-      toast({ title: "Partenaire mis à jour" });
-    } else {
-      const { error } = await supabase.from("partners").insert({ ...form, active: true });
-      if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); return; }
-      toast({ title: "Partenaire ajouté" });
-    }
-    resetForm();
-    fetchPartners();
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <Input
+          placeholder="Rechercher un membre..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-[160px]">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Rôle" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les rôles</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="moderator">Modérateur</SelectItem>
+            <SelectItem value="user">Utilisateur</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={cityFilter} onValueChange={setCityFilter}>
+          <SelectTrigger className="w-[180px]">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Ville" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes les villes</SelectItem>
+            {cities.map((c) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="bg-card rounded-2xl overflow-hidden shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nom</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Téléphone</TableHead>
+              <TableHead>Ville</TableHead>
+              <TableHead>Rôle</TableHead>
+              <TableHead>Inscrit le</TableHead>
+              <TableHead>Dernière activité</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filtered.map((m) => (
+              <TableRow key={m.id}>
+                <TableCell className="font-medium">{m.full_name}</TableCell>
+                <TableCell>{m.email}</TableCell>
+                <TableCell>{m.phone}</TableCell>
+                <TableCell>{m.city}</TableCell>
+                <TableCell>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${m.role === "admin" ? "bg-primary/10 text-primary" : m.role === "moderator" ? "bg-accent/20 text-accent-foreground" : "bg-muted text-muted-foreground"}`}>
+                    {roleLabels[m.role]}
+                  </span>
+                </TableCell>
+                <TableCell>{new Date(m.created_at).toLocaleDateString("fr-FR")}</TableCell>
+                <TableCell>{new Date(m.last_active).toLocaleDateString("fr-FR")}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+};
+
+/* ── Articles Tab with filters & export ── */
+const ArticlesTab = () => {
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const { toast } = useToast();
+
+  const categories = useMemo(() => [...new Set(mockArticles.map((a) => a.category))].sort(), []);
+
+  const filtered = useMemo(() => {
+    return mockArticles.filter((a) => {
+      if (statusFilter === "published" && !a.published) return false;
+      if (statusFilter === "draft" && a.published) return false;
+      if (categoryFilter !== "all" && a.category !== categoryFilter) return false;
+      if (search && !a.title.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
+  }, [search, statusFilter, categoryFilter]);
+
+  const handleExport = (format: "csv" | "json") => {
+    const data = filtered.map(({ id, title, category, published, author, views, created_at }) => ({
+      id, title, category, statut: published ? "Publié" : "Brouillon", author, views, created_at,
+    }));
+    if (format === "csv") exportToCSV(data, "articles");
+    else exportToJSON(data, "articles");
+    toast({ title: `Export ${format.toUpperCase()} réussi`, description: `${data.length} articles exportés.` });
   };
 
-  const deletePartner = async (id: string) => {
-    const { error } = await supabase.from("partners").delete().eq("id", id);
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { toast({ title: "Partenaire supprimé" }); fetchPartners(); }
-  };
+  return (
+    <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+        <h2 className="font-display text-2xl font-bold text-foreground">Articles ({filtered.length})</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => handleExport("csv")} className="rounded-full">
+            <Download className="w-4 h-4 mr-1" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => handleExport("json")} className="rounded-full">
+            <Download className="w-4 h-4 mr-1" /> JSON
+          </Button>
+        </div>
+      </div>
 
-  const editPartner = (p: any) => {
-    setEditing(p);
-    setForm({ name: p.name, description: p.description || "", logo_url: p.logo_url || "", website_url: p.website_url || "", display_order: p.display_order || 0 });
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 mb-6">
+        <Input
+          placeholder="Rechercher un article..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[160px]">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            <SelectItem value="published">Publiés</SelectItem>
+            <SelectItem value="draft">Brouillons</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-[180px]">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Catégorie" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes catégories</SelectItem>
+            {categories.map((c) => (
+              <SelectItem key={c} value={c}>{c}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-3">
+        {filtered.map((a) => (
+          <motion.div
+            key={a.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-card p-4 rounded-xl shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`w-2 h-2 rounded-full ${a.published ? "bg-primary" : "bg-muted-foreground"}`} />
+                <h3 className="font-semibold text-foreground truncate">{a.title}</h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {a.category} • {a.author} • {a.views} vues • {new Date(a.created_at).toLocaleDateString("fr-FR")}
+              </p>
+            </div>
+            <span className={`text-xs px-3 py-1 rounded-full flex-shrink-0 ${a.published ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+              {a.published ? "Publié" : "Brouillon"}
+            </span>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+/* ── Partners Tab (mock) ── */
+const mockPartners = [
+  { id: "p1", name: "Fondation Éducation Pour Tous", description: "Partenaire stratégique pour les programmes éducatifs.", website: "https://example.com", active: true },
+  { id: "p2", name: "ONG Santé Communautaire", description: "Collaboration sur les initiatives de santé rurale.", website: "https://example.com", active: true },
+  { id: "p3", name: "Alliance Jeunesse Africaine", description: "Réseau de soutien pour l'emploi des jeunes.", website: "https://example.com", active: true },
+  { id: "p4", name: "Institut de Développement Durable", description: "Partenariat pour les projets environnementaux.", website: "https://example.com", active: false },
+];
+
+const PartnersTab = () => (
+  <div>
+    <h2 className="font-display text-2xl font-bold text-foreground mb-6">Partenaires ({mockPartners.length})</h2>
+    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {mockPartners.map((p) => (
+        <div key={p.id} className="bg-card p-6 rounded-xl shadow-sm card-hover">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-foreground">{p.name}</h3>
+            <span className={`w-2.5 h-2.5 rounded-full ${p.active ? "bg-primary" : "bg-muted-foreground"}`} />
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">{p.description}</p>
+          <span className={`text-xs px-2 py-0.5 rounded-full ${p.active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+            {p.active ? "Actif" : "Inactif"}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+/* ── Newsletter Tab (mock) ── */
+const mockSubscribers = Array.from({ length: 18 }, (_, i) => ({
+  id: `sub-${i}`,
+  email: `subscriber${i + 1}@example.com`,
+  subscribed_at: new Date(2025, 6 + Math.floor(i / 3), 1 + i * 2).toISOString(),
+  active: Math.random() > 0.15,
+}));
+
+const NewsletterTab = () => {
+  const { toast } = useToast();
+
+  const handleExport = (format: "csv" | "json") => {
+    const data = mockSubscribers.map(({ email, subscribed_at, active }) => ({ email, subscribed_at, active: active ? "Oui" : "Non" }));
+    if (format === "csv") exportToCSV(data, "newsletter");
+    else exportToJSON(data, "newsletter");
+    toast({ title: `Export ${format.toUpperCase()} réussi` });
   };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h2 className="font-display text-2xl font-bold text-foreground">Partenaires ({partners.length})</h2>
-        {!editing && (
-          <Button onClick={() => setEditing({})} className="btn-primary-gradient rounded-full">
-            <Plus className="w-4 h-4 mr-2" />Nouveau partenaire
+        <h2 className="font-display text-2xl font-bold text-foreground">Abonnés newsletter ({mockSubscribers.length})</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => handleExport("csv")} className="rounded-full">
+            <Download className="w-4 h-4 mr-1" /> CSV
           </Button>
-        )}
+          <Button variant="outline" size="sm" onClick={() => handleExport("json")} className="rounded-full">
+            <Download className="w-4 h-4 mr-1" /> JSON
+          </Button>
+        </div>
       </div>
-
-      {editing !== null && (
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-card p-6 rounded-2xl shadow-sm mb-8 space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-display text-lg font-semibold">{editing?.id ? "Modifier" : "Nouveau"} partenaire</h3>
-            <Button variant="ghost" size="icon" onClick={resetForm}><X className="w-4 h-4" /></Button>
-          </div>
-          <Input placeholder="Nom" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <Textarea placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
-          <Input placeholder="URL du logo" value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} />
-          <Input placeholder="URL du site web" value={form.website_url} onChange={(e) => setForm({ ...form, website_url: e.target.value })} />
-          <Input type="number" placeholder="Ordre d'affichage" value={form.display_order} onChange={(e) => setForm({ ...form, display_order: parseInt(e.target.value) || 0 })} />
-          <Button onClick={handleSave} className="btn-primary-gradient rounded-full"><Save className="w-4 h-4 mr-2" />Enregistrer</Button>
-        </motion.div>
-      )}
-
-      {loading ? <p>Chargement...</p> : (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {partners.map((p) => (
-            <div key={p.id} className="bg-card p-6 rounded-xl shadow-sm">
-              <h3 className="font-semibold text-foreground mb-2">{p.name}</h3>
-              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{p.description}</p>
-              <div className="flex gap-1">
-                <Button variant="ghost" size="icon" onClick={() => editPartner(p)}><Edit className="w-4 h-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => deletePartner(p.id)} className="text-destructive hover:text-destructive"><Trash2 className="w-4 h-4" /></Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Newsletter Tab
-const NewsletterTab = () => {
-  const [subscribers, setSubscribers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
-
-  const fetchSubscribers = async () => {
-    setLoading(true);
-    const { data, error } = await supabase.from("newsletter_subscribers").select("*").order("subscribed_at", { ascending: false });
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else setSubscribers(data || []);
-    setLoading(false);
-  };
-
-  useEffect(() => { fetchSubscribers(); }, []);
-
-  const deleteSubscriber = async (id: string) => {
-    const { error } = await supabase.from("newsletter_subscribers").delete().eq("id", id);
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else { toast({ title: "Abonné supprimé" }); fetchSubscribers(); }
-  };
-
-  return (
-    <div>
-      <h2 className="font-display text-2xl font-bold text-foreground mb-6">Abonnés newsletter ({subscribers.length})</h2>
-      {loading ? <p>Chargement...</p> : (
-        <div className="bg-card rounded-2xl overflow-hidden shadow-sm">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Date d'inscription</TableHead>
-                <TableHead>Actions</TableHead>
+      <div className="bg-card rounded-2xl overflow-hidden shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Email</TableHead>
+              <TableHead>Inscrit le</TableHead>
+              <TableHead>Statut</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {mockSubscribers.map((s) => (
+              <TableRow key={s.id}>
+                <TableCell>{s.email}</TableCell>
+                <TableCell>{new Date(s.subscribed_at).toLocaleDateString("fr-FR")}</TableCell>
+                <TableCell>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${s.active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                    {s.active ? "Actif" : "Désabonné"}
+                  </span>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {subscribers.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell>{s.email}</TableCell>
-                  <TableCell>{new Date(s.subscribed_at).toLocaleDateString("fr-FR")}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => deleteSubscriber(s.id)} className="text-destructive hover:text-destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };
