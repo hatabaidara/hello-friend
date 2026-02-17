@@ -2,34 +2,32 @@ package com.tonsite.dto;
 
 import com.tonsite.model.Role;
 
-import java.time.LocalDateTime;
-
-public class MemberResponse {
+public class MemberWithScoreResponse {
     private Long id;
     private String nom;
     private String email;
     private String telephone;
     private String ville;
     private Role role;
-    private LocalDateTime createdAt;
-    private LocalDateTime lastActivityAt;
+    private Double engagementScore;
+    private String riskLevel;
 
-    public MemberResponse(Long id,
-                          String nom,
-                          String email,
-                          String telephone,
-                          String ville,
-                          Role role,
-                          LocalDateTime createdAt,
-                          LocalDateTime lastActivityAt) {
+    public MemberWithScoreResponse(Long id,
+                                   String nom,
+                                   String email,
+                                   String telephone,
+                                   String ville,
+                                   Role role,
+                                   Double engagementScore,
+                                   String riskLevel) {
         this.id = id;
         this.nom = nom;
         this.email = email;
         this.telephone = telephone;
         this.ville = ville;
         this.role = role;
-        this.createdAt = createdAt;
-        this.lastActivityAt = lastActivityAt;
+        this.engagementScore = engagementScore;
+        this.riskLevel = riskLevel;
     }
 
     public Long getId() {
@@ -56,11 +54,11 @@ public class MemberResponse {
         return role;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public Double getEngagementScore() {
+        return engagementScore;
     }
 
-    public LocalDateTime getLastActivityAt() {
-        return lastActivityAt;
+    public String getRiskLevel() {
+        return riskLevel;
     }
 }

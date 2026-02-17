@@ -53,6 +53,25 @@ const Auth = () => {
           },
         });
         if (error) throw error;
+
+        const backendRes = await fetch("http://localhost:8081/api/members/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            nom: form.full_name,
+            email: form.email,
+            telephone: form.phone,
+            ville: form.city,
+            motDePasse: form.password,
+          }),
+        });
+
+        if (!backendRes.ok) {
+          throw new Error("Inscription backend échouée");
+        }
         toast({
           title: "Inscription réussie !",
           description: "Vérifiez votre email pour confirmer votre compte.",

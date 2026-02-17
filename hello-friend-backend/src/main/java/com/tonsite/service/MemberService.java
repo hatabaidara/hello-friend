@@ -44,8 +44,8 @@ public class MemberService {
         Member member = new Member();
         member.setNom(request.getNom());
         member.setEmail(request.getEmail());
-        member.setTelephone(request.getTelephone());
-        member.setVille(request.getVille());
+        member.setTelephone(request.getTelephone() == null ? "" : request.getTelephone());
+        member.setVille(request.getVille() == null ? "" : request.getVille());
         member.setRole(request.getRole() == null ? Role.MEMBRE : request.getRole());
         member.setMotDePasse(passwordEncoder.encode(request.getMotDePasse()));
 
@@ -146,7 +146,9 @@ public class MemberService {
                 member.getEmail(),
                 member.getTelephone(),
                 member.getVille(),
-                member.getRole()
+                member.getRole(),
+                member.getCreatedAt(),
+                member.getLastActivityAt()
         );
     }
 }

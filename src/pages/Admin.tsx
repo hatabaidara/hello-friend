@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -304,18 +304,67 @@ const MembersTab = () => {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [cityFilter, setCityFilter] = useState<string>("all");
+  const [members, setMembers] = useState<typeof mockMembers>([]);
   const { toast } = useToast();
 
-  const cities = useMemo(() => [...new Set(mockMembers.map((m) => m.city))].sort(), []);
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const res = await fetch("http://localhost:8081/api/members?size=200", {
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+
+        const page = await res.json();
+        const content = Array.isArray(page?.content) ? page.content : [];
+        const mapped = content.map((m: any) => ({
+          id: String(m.id ?? ""),
+          full_name: m.nom ?? "",
+          email: m.email ?? "",
+          phone: m.telephone ?? "",
+          city: m.ville ?? "",
+          role: (m.role ?? "MEMBRE").toString().toUpperCase() === "ADMIN" ? "admin" : "user",
+          created_at: m.createdAt ? new Date(m.createdAt).toISOString() : new Date().toISOString(),
+          last_active: m.lastActivityAt ? new Date(m.lastActivityAt).toISOString() : (m.createdAt ? new Date(m.createdAt).toISOString() : new Date().toISOString()),
+        }));
+
+        if (!cancelled) {
+          setMembers(mapped);
+        }
+      } catch {
+        if (!cancelled) {
+          toast({
+            title: "Erreur",
+            description: "Impossible de charger les membres depuis le backend.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [toast]);
+
+  const cities = useMemo(() => [...new Set(members.map((m) => m.city))].filter(Boolean).sort(), [members]);
 
   const filtered = useMemo(() => {
-    return mockMembers.filter((m) => {
+    return members.filter((m) => {
       if (roleFilter !== "all" && m.role !== roleFilter) return false;
       if (cityFilter !== "all" && m.city !== cityFilter) return false;
       if (search && !m.full_name.toLowerCase().includes(search.toLowerCase()) && !m.email.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     });
-  }, [search, roleFilter, cityFilter]);
+  }, [members, search, roleFilter, cityFilter]);
 
   const handleExport = (format: "csv" | "json") => {
     const data = filtered.map(({ id, full_name, email, phone, city, role, created_at }) => ({ id, full_name, email, phone, city, role, created_at }));

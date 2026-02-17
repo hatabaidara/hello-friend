@@ -25,11 +25,9 @@ public class Member {
     @Size(max = 180)
     private String email;
 
-    @NotBlank
     @Size(max = 30)
     private String telephone;
 
-    @NotBlank
     @Size(max = 120)
     private String ville;
 
