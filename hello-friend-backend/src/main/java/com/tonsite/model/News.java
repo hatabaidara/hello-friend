@@ -3,15 +3,11 @@ package com.tonsite.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "news")
-@Getter
-@Setter
 public class News {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,4 +22,36 @@ public class News {
     private String contenu;
 
     private LocalDate datePublication;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getTitre() {
+        return titre;
+    }
+
+    public void setTitre(String titre) {
+        this.titre = titre;
+    }
+
+    public String getContenu() {
+        return contenu;
+    }
+
+    public void setContenu(String contenu) {
+        this.contenu = contenu;
+    }
+
+    public LocalDate getDatePublication() {
+        return datePublication;
+    }
+
+    public void setDatePublication(LocalDate datePublication) {
+        this.datePublication = datePublication;
+    }
 }

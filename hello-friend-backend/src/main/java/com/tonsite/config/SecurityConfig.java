@@ -14,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 
 import java.util.List;
@@ -21,6 +22,12 @@ import java.util.List;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    private final LastActivityUpdateFilter lastActivityUpdateFilter;
+
+    public SecurityConfig(LastActivityUpdateFilter lastActivityUpdateFilter) {
+        this.lastActivityUpdateFilter = lastActivityUpdateFilter;
+    }
 
     // PasswordEncoder
     @Bean
@@ -54,8 +61,10 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
+            .addFilterAfter(lastActivityUpdateFilter, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/members/register").permitAll()
+                .requestMatchers("/api/members/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .httpBasic(Customizer.withDefaults());
