@@ -1,0 +1,16 @@
+# Ignore build outputs and local files
+target/
+**/target/
+.git
+.gitignore
+README.md
+.vscode
+.idea
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+**/*.log
+**/*.tmp
+.DS_Store
+node_modules/
+!Dockerfile
+
