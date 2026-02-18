@@ -6,15 +6,13 @@ FROM ${MAVEN_IMAGE} AS builder
 WORKDIR /workspace
 
 # Copy only the files needed to download dependencies first to leverage Docker cache
-COPY pom.xml mvnw* ./
-COPY .mvn .mvn
+COPY pom.xml ./
 
 # Pre-resolve dependencies into the local repository (cache-friendly)
 RUN mvn -B -DskipTests dependency:go-offline || true
 
-# Copy source and build
-COPY src ./src
-COPY pom.xml ./
+# Copy the full project (Dockerfile's .dockerignore will exclude target/ etc.)
+COPY . ./
 
 # Build artifact (skip tests by default, override in CI if needed)
 RUN mvn -B -DskipTests package -T1C
