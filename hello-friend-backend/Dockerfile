@@ -1,5 +1,6 @@
 # --- Stage 1: build (Maven + JDK) ---
 ARG MAVEN_IMAGE=maven:3.9.6-eclipse-temurin-17
+ARG RUNTIME_IMAGE=eclipse-temurin:17-jre-jammy
 FROM ${MAVEN_IMAGE} AS builder
 
 WORKDIR /workspace
@@ -19,7 +20,6 @@ COPY pom.xml ./
 RUN mvn -B -DskipTests package -T1C
 
 # --- Stage 2: runtime (minimal JRE) ---
-ARG RUNTIME_IMAGE=eclipse-temurin:17-jre-jammy
 FROM ${RUNTIME_IMAGE} AS runtime
 
 # Default runtime environment variables (can be overridden at runtime)
@@ -62,4 +62,3 @@ ENTRYPOINT ["sh", "-c", "exec java $JVM_OPTS -jar /app/app.jar"]
 # Simple HTTP healthcheck (adjust endpoint to your app - e.g. /actuator/health)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD curl -f http://127.0.0.1:${PORT}/actuator/health || exit 1
-

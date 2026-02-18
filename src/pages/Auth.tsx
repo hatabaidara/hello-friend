@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import { LogIn, UserPlus, Mail, Lock, User, Phone, MapPin } from "lucide-react";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
+
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,7 +56,7 @@ const Auth = () => {
         });
         if (error) throw error;
 
-        const backendRes = await fetch("http://localhost:8081/api/members/register", {
+        const backendRes = await fetch(`${API_BASE_URL}/api/members/register`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

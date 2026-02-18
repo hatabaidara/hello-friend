@@ -21,6 +21,8 @@ import {
   type MockMember, type MockArticle, type UserRole, type ArticleStatus,
 } from "@/data/mockData";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
+
 type Tab = "analytics" | "members" | "articles" | "partners" | "newsletter" | "engagement";
 
 const Admin = () => {
@@ -45,7 +47,7 @@ const Admin = () => {
               Administration
             </h1>
           </div>
-          <p className="text-primary-foreground/70 mb-6 text-sm">Données simulées • Aucune connexion backend requise</p>
+          <p className="text-primary-foreground/70 mb-6 text-sm">Données simulées + Membres depuis backend</p>
           <div className="flex flex-wrap gap-2">
             {tabs.map((t) => (
               <Button
@@ -312,7 +314,7 @@ const MembersTab = () => {
 
     const load = async () => {
       try {
-        const res = await fetch("http://localhost:8081/api/members?size=200", {
+        const res = await fetch(`${API_BASE_URL}/api/members?size=200`, {
           headers: {
             Accept: "application/json",
           },
