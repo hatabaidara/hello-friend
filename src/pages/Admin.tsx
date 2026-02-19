@@ -20,10 +20,7 @@ import {
   exportToCSV, exportToJSON,
   type MockMember, type MockArticle, type UserRole, type ArticleStatus,
 } from "@/data/mockData";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8081";
-
-type Tab = "analytics" | "members" | "articles" | "partners" | "newsletter" | "engagement";
+import { API_BASE_URL } from "@/lib/api";
 
 const Admin = () => {
   const [tab, setTab] = useState<Tab>("analytics");
