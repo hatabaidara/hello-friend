@@ -13,20 +13,18 @@ FROM ${MAVEN_IMAGE} AS builder
 
 WORKDIR /workspace
 
-# copy mvnw and .mvn if present to support projects using the wrapper
-# copy pom first to take advantage of layer caching for dependencies
+# copy mvnw and pom first to take advantage of layer caching for dependencies
 COPY pom.xml mvnw* ./
-COPY .mvn/ .mvn/ || true
 
 # Pre-resolve dependencies to leverage cache
 RUN mvn -B -DskipTests dependency:go-offline || true
 
 # Copy the rest of the project
 COPY src/ ./src/
-COPY hello-friend-backend/pom.xml ./hello-friend-backend-pom.xml || true
-COPY ./.mvn ./.mvn || true
+COPY hello-friend-backend/pom.xml ./hello-friend-backend-pom.xml
 COPY . .
 
+# If the project uses the wrapper, the mvnw script will have been copied above.
 # Build the application artifact
 RUN mvn -B -DskipTests package -T1C
 
