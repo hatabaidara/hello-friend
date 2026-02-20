@@ -23,8 +23,8 @@ const contactInfo = [
   {
     icon: Mail,
     title: "Email",
-    content: "contact@generation-original.sn",
-    link: "mailto:contact@generation-original.sn",
+    content: "hatabaidara08@gmail.com",
+    link: "hatabaidara08@gmail.com",
   },
 ];
 

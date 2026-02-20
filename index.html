@@ -22,6 +22,22 @@
 
   <body>
     <div id="root"></div>
+    <!-- Runtime env injection: render or any hosting can replace __API_BASE_URL__ in the meta below without rebuilding -->
+    <meta name="api-base-url" content="__API_BASE_URL__" />
+    <script>
+      // Populate window.__ENV from the meta tag at runtime (safe in browsers)
+      (function(){
+        try {
+          var m = document.querySelector('meta[name="api-base-url"]');
+          var v = (m && m.getAttribute('content')) || '';
+          if (v && v !== '__API_BASE_URL__') {
+            window.__ENV = window.__ENV || {};
+            window.__ENV.VITE_API_BASE_URL = v;
+            window.__API_BASE_URL = v;
+          }
+        } catch (e) { /* ignore */ }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

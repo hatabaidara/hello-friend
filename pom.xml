@@ -1,0 +1,19 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.tonsite</groupId>
+    <artifactId>hello-friend-parent</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>hello-friend-parent</name>
+    <description>Aggregator POM for hello-friend project (ensures backend module builds when mvn run from repo root)</description>
+
+    <modules>
+        <module>hello-friend-backend</module>
+        <!-- Support nested copy if CI or dev runs mvn from different subfolder structure -->
+        <module>hello-friend/hello-friend-backend</module>
+    </modules>
+</project>

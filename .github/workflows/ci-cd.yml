@@ -1,0 +1,85 @@
+name: CI-CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-backend:
+    name: Build & Package Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Build backend (maven)
+        run: mvn -f hello-friend-backend/pom.xml clean package -DskipTests
+
+      - name: Build Docker image and push to GitHub Container Registry
+        if: github.event_name == 'push'
+        env:
+          REGISTRY: ghcr.io
+          IMAGE_NAME: ${{ github.repository_owner }}/hello-friend-backend
+          VERSION: ${{ github.sha }}
+        run: |
+          echo "Logging into GHCR"
+          echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          docker build -f hello-friend-backend/Dockerfile -t $REGISTRY/$IMAGE_NAME:$VERSION hello-friend-backend
+          docker push $REGISTRY/$IMAGE_NAME:$VERSION
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+        working-directory: .
+
+      - name: Build frontend (root)
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+        run: |
+          npm run build
+        working-directory: .
+
+      - name: Upload frontend build (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: dist
+
+  optional-deploy-render:
+    name: Deploy to Render (optional)
+    needs: [ build-backend, build-frontend ]
+    runs-on: ubuntu-latest
+    if: ${{ secrets.RENDER_SERVICE_ID != '' && secrets.RENDER_API_KEY != '' }}
+    steps:
+      - name: Deploy frontend to Render
+        run: |
+          curl -s -X POST "https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}" \
+           -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+           -H "Accept: application/json" \
+           -H "Content-Type: application/json" \
+           -d '{"clearCache":true}'
+
