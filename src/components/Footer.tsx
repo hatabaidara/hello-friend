@@ -52,7 +52,7 @@ export const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                <span className="font-display font-bold text-xl">GO</span>
+                <span className="font-display font-bold text-xl">GOC</span>
               </div>
               <div>
                 <p className="font-display font-semibold text-lg leading-tight">Génération</p>
