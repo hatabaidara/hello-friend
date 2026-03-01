@@ -51,7 +51,7 @@ export const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <span className="text-[#16a34a] font-display font-bold text-2xl">GOC</span>
+              <span className="text-[#16a34a] font-display font-bold text-2xl">GOG</span>
               <div>
                 <p className="font-display font-semibold text-lg leading-tight">Génération</p>
                 <p className="font-display font-bold leading-tight text-accent">Original</p>

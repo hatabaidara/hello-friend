@@ -42,7 +42,7 @@ export const Header = () => {
       <div className="section-container">
         <nav className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            <span className="text-[#16a34a] font-display font-bold text-2xl group-hover:scale-105 transition-transform">GOC</span>
+            <span className="text-[#16a34a] font-display font-bold text-2xl group-hover:scale-105 transition-transform">GOG</span>
             <div className="hidden sm:block">
               <p className="font-display font-semibold text-lg leading-tight">Génération</p>
               <p className="font-display text-primary font-bold leading-tight">Original</p>
