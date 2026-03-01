@@ -43,7 +43,7 @@ export const Header = () => {
         <nav className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <span className="text-primary-foreground font-display font-bold text-xl">GO</span>
+              <span className="text-primary-foreground font-display font-bold text-xl">GOC</span>
             </div>
             <div className="hidden sm:block">
               <p className="font-display font-semibold text-lg leading-tight">Génération</p>
