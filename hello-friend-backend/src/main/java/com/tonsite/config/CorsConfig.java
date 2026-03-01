@@ -21,7 +21,6 @@ public class CorsConfig {
                 "http://localhost:5173",
                 "http://localhost:8080",
                 "http://localhost:3000",
-                "https://id-preview--1136a99f-0bac-4d54-923e-559e58a91f7f.lovable.app",
                 "https://hello-friend-frontend.onrender.com",
                 "https://www.votredomaine.com"
         );
