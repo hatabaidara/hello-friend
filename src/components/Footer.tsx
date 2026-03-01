@@ -51,9 +51,7 @@ export const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-                <span className="font-display font-bold text-xl">GOC</span>
-              </div>
+              <span className="text-[#16a34a] font-display font-bold text-2xl">GOC</span>
               <div>
                 <p className="font-display font-semibold text-lg leading-tight">Génération</p>
                 <p className="font-display font-bold leading-tight text-accent">Original</p>
