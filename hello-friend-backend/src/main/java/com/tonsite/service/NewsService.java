@@ -26,6 +26,9 @@ public class NewsService {
     public List<News> getAllNews() {
         return newsRepository.findAll();
     }
+    public News getNewsById(Long id) {
+        return newsRepository.findById(id).orElseThrow(() -> new RuntimeException("Article introuvable"));
+    }
     public News updateNews(Long id, News updated) {
         News news = newsRepository.findById(id).orElseThrow(() -> new RuntimeException("Article introuvable"));
         news.setTitre(updated.getTitre());

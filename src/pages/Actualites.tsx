@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import { API_BASE_URL } from "@/lib/api";
+import { Link } from "react-router-dom";
 import actionRally from "@/assets/action-rally.jpg";
 
 const Actualites = () => {
@@ -78,7 +79,7 @@ const Actualites = () => {
                   {articles.slice(1).map((article, index) => (
                     <motion.article key={article.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }} viewport={{ once: true }}
-                      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-green-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-green-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 block" as={Link} to={`/actualites/${article.id}`}>
                       <div className="aspect-video bg-green-50 flex items-center justify-center">
                         <Newspaper className="w-12 h-12 text-green-200" />
                       </div>

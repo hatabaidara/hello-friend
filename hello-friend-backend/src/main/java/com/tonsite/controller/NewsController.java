@@ -19,6 +19,9 @@ public class NewsController {
     @GetMapping
     public List<News> getAllNews() { return newsService.getAllNews(); }
 
+    @GetMapping("/{id}")
+    public News getNewsById(@PathVariable Long id) { return newsService.getNewsById(id); }
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public News updateNews(@PathVariable Long id, @Valid @RequestBody News news) { return newsService.updateNews(id, news); }

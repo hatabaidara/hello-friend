@@ -15,6 +15,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import Confidentialite from "./pages/Confidentialite";
 import NotFound from "./pages/NotFound";
+import ArticleDetail from "./pages/ArticleDetail";
 import { Navigate } from "react-router-dom";
 
 const ProtectedRoute = ({ children }: { children: any }) => {
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+            <Route path="/actualites/:id" element={<ArticleDetail />} />
             <Route path="/confidentialite" element={<Confidentialite />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
