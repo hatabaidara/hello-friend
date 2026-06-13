@@ -22,7 +22,8 @@ public class CorsConfig {
                 "http://localhost:8080",
                 "http://localhost:3000",
                 "https://hello-friend-frontend.onrender.com",
-                "https://www.votredomaine.com"
+                "https://www.votredomaine.com",
+                "https://hello-friend-kappa.vercel.app"
         );
 
         config.setAllowedOrigins(origins);
