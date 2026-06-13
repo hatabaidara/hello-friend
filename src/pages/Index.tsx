@@ -1,8 +1,10 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Users, GraduationCap, HeartPulse, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
+import { API_BASE_URL } from "@/lib/api";
 import heroImage from "@/assets/hero-mamadou.jpg";
 import actionRally from "@/assets/action-rally.jpg";
 import actionEducation from "@/assets/action-education.jpg";
@@ -37,6 +39,14 @@ const pillars = [
 ];
 
 const Index = () => {
+  const [articles, setArticles] = useState<any[]>([]);
+  const [partners, setPartners] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/news`).then(r => r.json()).then(d => setArticles(Array.isArray(d) ? d.slice(0, 3) : [])).catch(() => {});
+    fetch(`${API_BASE_URL}/api/partners`).then(r => r.json()).then(d => setPartners(Array.isArray(d) ? d.slice(0, 4) : [])).catch(() => {});
+  }, []);
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -278,6 +288,52 @@ const Index = () => {
           </motion.div>
         </div>
       </section>
+
+      {/* Actualites Section */}
+      {articles.length > 0 && (
+        <section className="py-24 bg-secondary">
+          <div className="section-container">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} className="text-center mb-16">
+              <p className="text-primary font-semibold mb-4 uppercase tracking-wider">Actualites</p>
+              <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-6">Dernieres nouvelles</h2>
+            </motion.div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {articles.map((a, i) => (
+                <motion.div key={a.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} viewport={{ once: true }}
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-green-100 hover:shadow-md transition-all">
+                  <p className="text-xs text-muted-foreground mb-2">{a.datePublication}</p>
+                  <h3 className="font-display text-lg font-semibold text-foreground mb-3 line-clamp-2">{a.titre}</h3>
+                  <p className="text-muted-foreground text-sm line-clamp-3">{a.contenu}</p>
+                </motion.div>
+              ))}
+            </div>
+            <div className="text-center mt-12">
+              <Link to="/actualites"><Button className="btn-primary-gradient rounded-full px-8 group">Voir toutes les actualites <ArrowRight className="ml-2 w-4 h-4" /></Button></Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Partenaires Section */}
+      {partners.length > 0 && (
+        <section className="py-16">
+          <div className="section-container">
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }} className="text-center mb-12">
+              <p className="text-primary font-semibold mb-4 uppercase tracking-wider">Partenaires</p>
+              <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground">Ils nous font confiance</h2>
+            </motion.div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {partners.map((p, i) => (
+                <motion.div key={p.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} viewport={{ once: true }}
+                  className="bg-white rounded-xl p-4 shadow-sm border border-green-100 flex flex-col items-center text-center">
+                  {p.logoUrl ? <img src={p.logoUrl} alt={p.nom} className="h-12 object-contain mb-2" /> : <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2"><span className="font-bold text-primary">{p.nom?.substring(0,2).toUpperCase()}</span></div>}
+                  <p className="text-sm font-medium text-foreground">{p.nom}</p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-24 hero-gradient">
