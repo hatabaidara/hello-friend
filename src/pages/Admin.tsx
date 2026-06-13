@@ -12,7 +12,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { API_BASE_URL } from "@/lib/api";
 
-type Tab = "analytics" | "members" | "articles" | "partners";
+type Tab = "analytics" | "members" | "articles" | "partners" | "gallery";
 
 
 const uploadImage = async (file: File): Promise<string> => {
@@ -36,6 +36,7 @@ const Admin = () => {
     { key: "members", label: "Membres", icon: Users },
     { key: "articles", label: "Articles", icon: Newspaper },
     { key: "partners", label: "Partenaires", icon: Handshake },
+    { key: "gallery", label: "Galerie", icon: ImageIcon },
   ];
   return (
     <Layout>
@@ -61,6 +62,7 @@ const Admin = () => {
           {tab === "members" && <MembersTab />}
           {tab === "articles" && <ArticlesTab />}
           {tab === "partners" && <PartnersTab />}
+          {tab === "gallery" && <GalleryTab />}
         </div>
       </section>
     </Layout>
@@ -364,6 +366,82 @@ const PartnersTab = () => {
           </div>
         ))}
         {partners.length === 0 && <p className="text-center text-muted-foreground py-12 col-span-3">Aucun partenaire. Ajoutez-en un !</p>}
+      </div>
+    </div>
+  );
+};
+
+const GalleryTab = () => {
+  const [items, setItems] = useState<any[]>([]);
+  const [titre, setTitre] = useState("");
+  const [categorie, setCategorie] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+
+  const load = () => fetch(`${API_BASE_URL}/api/gallery`).then(r => r.json()).then(setItems).catch(() => {});
+  useEffect(() => { load(); }, []);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const url = await uploadImage(file);
+    setImageUrl(url);
+    setUploading(false);
+  };
+
+  const handleAdd = async () => {
+    if (!titre || !imageUrl) return toast({ title: "Titre et image requis", variant: "destructive" });
+    const res = await fetch(`${API_BASE_URL}/api/gallery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Basic " + getAuth() },
+      body: JSON.stringify({ titre, categorie, imageUrl }),
+    });
+    if (res.ok) { toast({ title: "Image ajoutee" }); setTitre(""); setCategorie(""); setImageUrl(""); load(); }
+    else toast({ title: "Erreur", variant: "destructive" });
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm("Supprimer cette image ?")) return;
+    await fetch(`${API_BASE_URL}/api/gallery/${id}`, { method: "DELETE", headers: { Authorization: "Basic " + getAuth() } });
+    setItems(items.filter(i => i.id !== id));
+    toast({ title: "Image supprimee" });
+  };
+
+  return (
+    <div>
+      <h2 className="font-display text-2xl font-bold text-foreground mb-6">Galerie ({items.length} images)</h2>
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-green-100 mb-6">
+        <h3 className="font-semibold mb-4">Ajouter une image</h3>
+        <div className="grid md:grid-cols-2 gap-4">
+          <Input placeholder="Titre de l image" value={titre} onChange={e => setTitre(e.target.value)} />
+          <Input placeholder="Categorie (Evenements, Education...)" value={categorie} onChange={e => setCategorie(e.target.value)} />
+          <div>
+            <input type="file" accept="image/*" onChange={handleUpload} className="w-full text-sm border rounded-lg p-2" />
+            {uploading && <p className="text-xs text-muted-foreground mt-1">Upload en cours...</p>}
+            {imageUrl && <img src={imageUrl} className="mt-2 h-20 rounded-lg object-cover" />}
+          </div>
+          <div className="flex items-end">
+            <Button onClick={handleAdd} className="bg-primary text-white rounded-full w-full" disabled={uploading}>
+              <Plus className="w-4 h-4 mr-2" /> Ajouter
+            </Button>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {items.map((item: any) => (
+          <div key={item.id} className="relative group rounded-xl overflow-hidden aspect-square border border-green-100">
+            <img src={item.imageUrl} alt={item.titre} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-2">
+              <p className="text-white text-xs text-center font-medium">{item.titre}</p>
+              <Button size="sm" variant="ghost" onClick={() => handleDelete(item.id)} className="text-red-400 hover:text-red-300">
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && <p className="col-span-4 text-center text-muted-foreground py-12">Aucune image. Ajoutez-en une !</p>}
       </div>
     </div>
   );
