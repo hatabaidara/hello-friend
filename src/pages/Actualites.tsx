@@ -23,11 +23,8 @@ const Actualites = () => {
 
   const handleNewsletter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newsletterEmail.trim()) return;
-    setIsSubscribing(true);
-    toast({ title: "Inscription reussie !", description: "Bienvenue dans notre newsletter." });
+    toast({ title: "Inscription reussie !" });
     setNewsletterEmail("");
-    setIsSubscribing(false);
   };
 
   return (
@@ -38,22 +35,19 @@ const Actualites = () => {
             className="text-center text-primary-foreground max-w-3xl mx-auto">
             <p className="text-accent font-semibold mb-4 uppercase tracking-wider">Actualites</p>
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold mb-6">Restez informes</h1>
-            <p className="text-xl text-primary-foreground/90">Suivez nos dernieres actualites, evenements et communiques officiels.</p>
+            <p className="text-xl text-primary-foreground/90">Suivez nos dernieres actualites et communiques officiels.</p>
           </motion.div>
         </div>
       </section>
 
       {loading ? (
-        <section className="py-24">
-          <div className="flex justify-center">
-            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
+        <section className="py-24 flex justify-center">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </section>
       ) : articles.length === 0 ? (
         <section className="py-24 text-center">
           <Newspaper className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
           <p className="text-muted-foreground text-lg">Aucun article publie pour le moment.</p>
-          <p className="text-muted-foreground mt-2">Revenez bientot pour decouvrir nos actualites.</p>
         </section>
       ) : (
         <>
@@ -66,19 +60,16 @@ const Actualites = () => {
                   <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">A la une</div>
                 </div>
                 <div>
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                      <Calendar className="w-4 h-4" />
-                      <span>{articles[0].datePublication ? new Date(articles[0].datePublication).toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" }) : ""}</span>
-                    </div>
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm mb-4">
+                    <Calendar className="w-4 h-4" />
+                    <span>{articles[0].datePublication ? new Date(articles[0].datePublication).toLocaleDateString("fr-FR", { year: "numeric", month: "long", day: "numeric" }) : ""}</span>
                   </div>
                   <h2 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-4">{articles[0].titre}</h2>
-                  <p className="text-muted-foreground text-lg leading-relaxed mb-6 line-clamp-4">{articles[0].contenu}</p>
+                  <p className="text-muted-foreground text-lg leading-relaxed line-clamp-4">{articles[0].contenu}</p>
                 </div>
               </motion.article>
             </div>
           </section>
-
           {articles.length > 1 && (
             <section className="py-16 bg-secondary">
               <div className="section-container">
@@ -87,8 +78,8 @@ const Actualites = () => {
                   {articles.slice(1).map((article, index) => (
                     <motion.article key={article.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }} viewport={{ once: true }}
-                      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-green-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300 group">
-                      <div className="aspect-video overflow-hidden bg-green-50 flex items-center justify-center">
+                      className="bg-white rounded-2xl overflow-hidden shadow-sm border border-green-100 hover:shadow-md hover:-translate-y-1 transition-all duration-300">
+                      <div className="aspect-video bg-green-50 flex items-center justify-center">
                         <Newspaper className="w-12 h-12 text-green-200" />
                       </div>
                       <div className="p-6">
@@ -118,9 +109,7 @@ const Actualites = () => {
               <input type="email" value={newsletterEmail} onChange={(e) => setNewsletterEmail(e.target.value)}
                 placeholder="Votre adresse email" required
                 className="px-6 py-4 rounded-full border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary flex-1 max-w-md" />
-              <Button type="submit" disabled={isSubscribing} className="btn-primary-gradient rounded-full px-8 py-4">
-                {isSubscribing ? "Inscription..." : "S abonner"}
-              </Button>
+              <Button type="submit" disabled={isSubscribing} className="btn-primary-gradient rounded-full px-8 py-4">S abonner</Button>
             </form>
           </motion.div>
         </div>
