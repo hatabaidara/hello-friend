@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -33,34 +32,24 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: form.email,
-          password: form.password,
+        const credentials = btoa(form.email + ":" + form.password);
+        const res = await fetch(`${API_BASE_URL}/api/members/${encodeURIComponent(form.email)}`, {
+          headers: { Authorization: "Basic " + credentials },
         });
-        if (error) throw error;
-        toast({ title: "Connexion réussie !" });
-        navigate("/");
+        if (!res.ok) throw new Error("Email ou mot de passe incorrect");
+        const user = await res.json();
+        localStorage.setItem("auth", credentials);
+        localStorage.setItem("user", JSON.stringify(user));
+        toast({ title: "Connexion reussie !" });
+        if (user.role === "ADMIN") {
+          navigate("/admin");
+        } else {
+          navigate("/");
+        }
       } else {
-        const { error } = await supabase.auth.signUp({
-          email: form.email,
-          password: form.password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: {
-              full_name: form.full_name,
-              phone: form.phone,
-              city: form.city,
-            },
-          },
-        });
-        if (error) throw error;
-
-        const backendRes = await fetch(`${API_BASE_URL}/api/members/register`, {
+        const res = await fetch(`${API_BASE_URL}/api/members/register`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             nom: form.full_name,
             email: form.email,
@@ -69,21 +58,12 @@ const Auth = () => {
             motDePasse: form.password,
           }),
         });
-
-        if (!backendRes.ok) {
-          throw new Error("Inscription backend échouée");
-        }
-        toast({
-          title: "Inscription réussie !",
-          description: "Vérifiez votre email pour confirmer votre compte.",
-        });
+        if (!res.ok) throw new Error("Inscription echouee");
+        toast({ title: "Inscription reussie !", description: "Vous pouvez maintenant vous connecter." });
+        setIsLogin(true);
       }
     } catch (error: any) {
-      toast({
-        title: "Erreur",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -124,92 +104,45 @@ const Auth = () => {
                     <label className="block text-sm font-medium text-foreground mb-2">
                       <User className="w-4 h-4 inline mr-2" />Nom complet *
                     </label>
-                    <Input
-                      name="full_name"
-                      value={form.full_name}
-                      onChange={handleChange}
-                      required
-                      placeholder="Votre nom complet"
-                      className="rounded-lg"
-                    />
+                    <Input name="full_name" value={form.full_name} onChange={handleChange} required placeholder="Votre nom complet" className="rounded-lg" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      <Phone className="w-4 h-4 inline mr-2" />Téléphone
+                      <Phone className="w-4 h-4 inline mr-2" />Telephone
                     </label>
-                    <Input
-                      name="phone"
-                      value={form.phone}
-                      onChange={handleChange}
-                      placeholder="+221 XX XXX XX XX"
-                      className="rounded-lg"
-                    />
+                    <Input name="phone" value={form.phone} onChange={handleChange} placeholder="+221 XX XXX XX XX" className="rounded-lg" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       <MapPin className="w-4 h-4 inline mr-2" />Ville
                     </label>
-                    <Input
-                      name="city"
-                      value={form.city}
-                      onChange={handleChange}
-                      placeholder="Votre ville"
-                      className="rounded-lg"
-                    />
+                    <Input name="city" value={form.city} onChange={handleChange} placeholder="Votre ville" className="rounded-lg" />
                   </div>
                 </>
               )}
-
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
                   <Mail className="w-4 h-4 inline mr-2" />Email *
                 </label>
-                <Input
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  required
-                  placeholder="votre@email.com"
-                  className="rounded-lg"
-                />
+                <Input name="email" type="email" value={form.email} onChange={handleChange} required placeholder="votre@email.com" className="rounded-lg" />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
                   <Lock className="w-4 h-4 inline mr-2" />Mot de passe *
                 </label>
-                <Input
-                  name="password"
-                  type="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  required
-                  minLength={6}
-                  placeholder="••••••••"
-                  className="rounded-lg"
-                />
+                <Input name="password" type="password" value={form.password} onChange={handleChange} required minLength={6} placeholder="��������" className="rounded-lg" />
               </div>
-
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="btn-primary-gradient rounded-full w-full py-6 text-lg"
-              >
+              <Button type="submit" disabled={isLoading} className="btn-primary-gradient rounded-full w-full py-6 text-lg">
                 {isLoading ? "Chargement..." : isLogin ? (
                   <><LogIn className="w-5 h-5 mr-2" />Se connecter</>
                 ) : (
-                  <><UserPlus className="w-5 h-5 mr-2" />S'inscrire</>
+                  <><UserPlus className="w-5 h-5 mr-2" />S inscrire</>
                 )}
               </Button>
             </form>
-
             <div className="mt-6 text-center">
-              <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary font-medium hover:underline"
-              >
-                {isLogin ? "Pas encore membre ? S'inscrire" : "Déjà membre ? Se connecter"}
+              <button onClick={() => setIsLogin(!isLogin)} className="text-primary font-medium hover:underline">
+                {isLogin ? "Pas encore membre ? S inscrire" : "Deja membre ? Se connecter"}
               </button>
             </div>
           </motion.div>
