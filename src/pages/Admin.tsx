@@ -7,12 +7,25 @@ import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import {
   Users, Newspaper, Handshake, Trash2, Edit, Plus, Save, X,
-  BarChart3, TrendingUp, FileText, UserCheck, Download, Shield, Activity,
+  BarChart3, TrendingUp, FileText, UserCheck, Download, Shield, Activity, ImageIcon,
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { API_BASE_URL } from "@/lib/api";
 
 type Tab = "analytics" | "members" | "articles" | "partners";
+
+
+const uploadImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "hello_friend_uploads");
+  const res = await fetch("https://api.cloudinary.com/v1_1/dvp8nloqg/image/upload", {
+    method: "POST",
+    body: formData,
+  });
+  const data = await res.json();
+  return data.secure_url;
+};
 
 const getAuth = () => localStorage.getItem("auth") || "";
 
@@ -231,6 +244,14 @@ const ArticlesTab = () => {
             <Input placeholder="Titre" value={editing.titre} onChange={e => setEditing({...editing, titre: e.target.value})} />
             <Textarea placeholder="Contenu" value={editing.contenu} onChange={e => setEditing({...editing, contenu: e.target.value})} rows={5} />
             <Input type="date" value={editing.datePublication} onChange={e => setEditing({...editing, datePublication: e.target.value})} />
+            <div>
+              <label className="block text-sm font-medium mb-2"><ImageIcon className="w-4 h-4 inline mr-1" /> Image de l article</label>
+              <input type="file" accept="image/*" onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) { const url = await uploadImage(file); setEditing({...editing, imageUrl: url}); }
+              }} className="w-full text-sm border rounded-lg p-2" />
+              {editing.imageUrl && <img src={editing.imageUrl} className="mt-2 h-24 rounded-lg object-cover" />}
+            </div>
             <div className="flex gap-2">
               <Button onClick={handleSave} className="bg-primary text-white rounded-full"><Save className="w-4 h-4 mr-2" /> Sauvegarder</Button>
               <Button variant="outline" onClick={() => { setEditing(null); setIsNew(false); }} className="rounded-full"><X className="w-4 h-4 mr-2" /> Annuler</Button>
@@ -309,6 +330,14 @@ const PartnersTab = () => {
             <Textarea placeholder="Description" value={editing.description} onChange={e => setEditing({...editing, description: e.target.value})} rows={3} />
             <Input placeholder="Site web (https://...)" value={editing.siteWeb} onChange={e => setEditing({...editing, siteWeb: e.target.value})} />
             <Input placeholder="URL du logo" value={editing.logoUrl} onChange={e => setEditing({...editing, logoUrl: e.target.value})} />
+            <div>
+              <label className="block text-sm font-medium mb-2"><ImageIcon className="w-4 h-4 inline mr-1" /> Ou uploader un logo</label>
+              <input type="file" accept="image/*" onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) { const url = await uploadImage(file); setEditing({...editing, logoUrl: url}); }
+              }} className="w-full text-sm border rounded-lg p-2" />
+              {editing.logoUrl && <img src={editing.logoUrl} className="mt-2 h-16 rounded-lg object-contain" />}
+            </div>
             <div className="flex gap-2">
               <Button onClick={handleSave} className="bg-primary text-white rounded-full"><Save className="w-4 h-4 mr-2" /> Sauvegarder</Button>
               <Button variant="outline" onClick={() => { setEditing(null); setIsNew(false); }} className="rounded-full"><X className="w-4 h-4 mr-2" /> Annuler</Button>
