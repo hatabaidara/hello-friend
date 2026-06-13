@@ -16,7 +16,7 @@ public class Partner {
     private String nom;
 
     @NotBlank
-    @Size(max = 2000)
+    @Size(max = 10000)
     private String description;
 
     @Size(max = 255)
