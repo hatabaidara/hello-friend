@@ -22,4 +22,15 @@ public class PartnerService {
     public List<Partner> getAllPartners() {
         return partnerRepository.findAll();
     }
+    public Partner updatePartner(Long id, Partner updated) {
+        Partner partner = partnerRepository.findById(id).orElseThrow(() -> new RuntimeException("Partenaire introuvable"));
+        partner.setNom(updated.getNom());
+        partner.setDescription(updated.getDescription());
+        partner.setSiteWeb(updated.getSiteWeb());
+        partner.setLogoUrl(updated.getLogoUrl());
+        return partnerRepository.save(partner);
+    }
+    public void deletePartner(Long id) {
+        partnerRepository.deleteById(id);
+    }
 }

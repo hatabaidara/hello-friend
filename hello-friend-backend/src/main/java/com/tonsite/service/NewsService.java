@@ -26,4 +26,14 @@ public class NewsService {
     public List<News> getAllNews() {
         return newsRepository.findAll();
     }
+    public News updateNews(Long id, News updated) {
+        News news = newsRepository.findById(id).orElseThrow(() -> new RuntimeException("Article introuvable"));
+        news.setTitre(updated.getTitre());
+        news.setContenu(updated.getContenu());
+        if (updated.getDatePublication() != null) news.setDatePublication(updated.getDatePublication());
+        return newsRepository.save(news);
+    }
+    public void deleteNews(Long id) {
+        newsRepository.deleteById(id);
+    }
 }
