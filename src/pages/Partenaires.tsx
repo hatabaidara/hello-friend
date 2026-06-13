@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Globe } from "lucide-react";
+import { ExternalLink, Globe, Handshake } from "lucide-react";
 import Layout from "@/components/Layout";
 import { API_BASE_URL } from "@/lib/api";
 
@@ -49,27 +49,37 @@ const Partenaires = () => {
           </motion.div>
 
           {loading ? (
-            <p className="text-center text-muted-foreground">Chargement...</p>
+            <div className="flex justify-center py-20">
+              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
           ) : partners.length === 0 ? (
-            <p className="text-center text-muted-foreground">Aucun partenaire pour le moment.</p>
+            <div className="text-center py-20">
+              <Handshake className="w-16 h-16 text-muted-foreground/30 mx-auto mb-4" />
+              <p className="text-muted-foreground text-lg">Aucun partenaire pour le moment.</p>
+            </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
               {partners.map((partner, index) => (
-                <motion.div key={partner.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} viewport={{ once: true }} className="bg-card p-8 rounded-2xl card-hover group">
-                  <div className="flex items-start justify-between mb-6">
+                <motion.div key={partner.id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }} viewport={{ once: true }}
+                  className="bg-white border border-green-100 p-8 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 group flex flex-col">
+                  <div className="flex items-center gap-4 mb-5">
                     {partner.logoUrl ? (
-                      <img src={partner.logoUrl} alt={partner.nom} className="w-16 h-16 rounded-xl object-contain" />
+                      <img src={partner.logoUrl} alt={partner.nom}
+                        className="w-16 h-16 rounded-xl object-contain border border-green-100 p-1 bg-white"
+                        onError={(e: any) => { e.target.style.display = "none"; }} />
                     ) : (
-                      <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                         <span className="font-display font-bold text-primary text-xl">{partner.nom?.substring(0, 2).toUpperCase()}</span>
                       </div>
                     )}
+                    <h3 className="font-display text-lg font-semibold text-foreground leading-tight">{partner.nom}</h3>
                   </div>
-                  <h3 className="font-display text-xl font-semibold text-foreground mb-3">{partner.nom}</h3>
-                  <p className="text-muted-foreground leading-relaxed mb-4">{partner.description}</p>
+                  <p className="text-muted-foreground leading-relaxed mb-5 flex-1 text-sm line-clamp-4">{partner.description}</p>
                   {partner.siteWeb && (
-                    <a href={partner.siteWeb} target="_blank" rel="noopener noreferrer" className="text-primary font-medium text-sm flex items-center gap-2 group-hover:gap-3 transition-all">
-                      <Globe className="w-4 h-4" /> Visiter le site <ExternalLink className="w-4 h-4" />
+                    <a href={partner.siteWeb} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-primary font-medium text-sm hover:gap-3 transition-all mt-auto border border-primary/20 rounded-full px-4 py-2 hover:bg-primary/5 w-fit">
+                      <Globe className="w-4 h-4" /> Visiter le site <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
                 </motion.div>
