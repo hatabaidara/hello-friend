@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useImages } from "@/hooks/useImages";
 import { MapPin, Calendar, Users, ArrowRight, MessageCircle, TrendingUp, Award, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,12 @@ const impacts = [
 ];
 
 const Actions = () => {
+  const images = useImages();
+  const actionsWithImages = [
+    { ...actions[0], image: images["action-rally"] || actionRally },
+    { ...actions[1], image: images["action-education"] || actionEducation },
+    { ...actions[2], image: images["action-health"] || actionHealth },
+  ];
   return (
     <Layout>
       {/* Hero Section */}
@@ -109,7 +116,7 @@ const Actions = () => {
           </motion.div>
 
           <div className="space-y-12">
-            {actions.map((action, index) => (
+            {actionsWithImages.map((action, index) => (
               <motion.article
                 key={action.id}
                 initial={{ opacity: 0, y: 30 }}
