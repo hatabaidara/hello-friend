@@ -23,7 +23,6 @@ public class News {
 
     private LocalDate datePublication;
     private String imageUrl;
-    private String imageUrl;
 
     public Long getId() {
         return id;
