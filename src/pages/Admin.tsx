@@ -218,7 +218,7 @@ const ArticlesTab = () => {
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json", Authorization: "Basic " + getAuth() },
-      body: JSON.stringify({ titre: editing.titre, contenu: editing.contenu, datePublication: editing.datePublication }),
+      body: JSON.stringify({ titre: editing.titre, contenu: editing.contenu, datePublication: editing.datePublication, imageUrl: editing.imageUrl }),
     });
     if (res.ok) { toast({ title: isNew ? "Article cree" : "Article modifie" }); setEditing(null); setIsNew(false); load(); }
     else toast({ title: "Erreur", variant: "destructive" });
