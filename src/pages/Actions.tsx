@@ -227,7 +227,7 @@ const Actions = () => {
       </section>
 
       {/* Section Travail Politique Détaillé */}
-      <section className="py-20 bg-muted/30">
+      <section className="py-20 bg-white">
         <div className="section-container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -251,8 +251,8 @@ const Actions = () => {
                 icon: <Target className="h-8 w-8" />,
                 title: "Mission",
                 description: "Servir les citoyens avec intégrité et dévouement",
-                color: "text-blue-600",
-                bgColor: "bg-blue-100"
+                color: "text-primary",
+                bgColor: "bg-primary/10"
               },
               {
                 icon: <TrendingUp className="h-8 w-8" />,
@@ -265,15 +265,15 @@ const Actions = () => {
                 icon: <Award className="h-8 w-8" />,
                 title: "Engagement",
                 description: "Présent sur le terrain 365 jours par an",
-                color: "text-purple-600",
-                bgColor: "bg-purple-100"
+                color: "text-primary",
+                bgColor: "bg-primary/10"
               },
               {
                 icon: <Users className="h-8 w-8" />,
                 title: "Inclusion",
                 description: "Toutes les régions, toutes les communautés",
-                color: "text-orange-600",
-                bgColor: "bg-orange-100"
+                color: "text-emerald-600",
+                bgColor: "bg-emerald-100"
               }
             ].map((item, index) => (
               <motion.div
@@ -293,7 +293,7 @@ const Actions = () => {
             ))}
           </div>
 
-          <div className="bg-card p-8 rounded-2xl shadow-lg">
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-green-100">
             <h3 className="text-2xl font-bold mb-6 text-center">Nos Axes d'Action Prioritaires</h3>
             <div className="grid md:grid-cols-2 gap-6">
               {[
@@ -324,7 +324,7 @@ const Actions = () => {
                   whileInView={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1, duration: 0.5 }}
                   viewport={{ once: true }}
-                  className="p-4 border rounded-lg"
+                  className="p-6 border border-green-100 rounded-xl bg-white shadow-sm hover:shadow-md transition-all"
                 >
                   <h4 className="font-semibold mb-2">{axe.title}</h4>
                   <p className="text-sm text-muted-foreground mb-3">{axe.description}</p>
@@ -333,7 +333,7 @@ const Actions = () => {
                       initial={{ width: 0 }}
                       whileInView={{ width: `${axe.progress}%` }}
                       transition={{ duration: 1, delay: 0.5 }}
-                      className="bg-blue-600 h-2 rounded-full"
+                      className="bg-primary h-2 rounded-full"
                     />
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">{axe.progress}% réalisé</p>
