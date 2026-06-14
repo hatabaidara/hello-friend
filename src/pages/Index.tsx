@@ -42,6 +42,11 @@ const pillars = [
 const Index = () => {
   const images = useImages();
   const [articles, setArticles] = useState<any[]>([]);
+  const dynamicPillars = [
+    { ...pillars[0], image: images["action-education"] || actionEducation },
+    { ...pillars[1], image: images["action-rally"] || actionRally },
+    { ...pillars[2], image: images["action-health"] || actionHealth },
+  ];
   const [partners, setPartners] = useState<any[]>([]);
 
   useEffect(() => {
@@ -243,7 +248,7 @@ const Index = () => {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {pillars.map((pillar, index) => (
+            {dynamicPillars.map((pillar, index) => (
               <motion.div
                 key={pillar.title}
                 initial={{ opacity: 0, y: 30 }}
