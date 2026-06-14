@@ -22,6 +22,7 @@ public class News {
     private String contenu;
 
     private LocalDate datePublication;
+    private String imageUrl;
 
     public Long getId() {
         return id;
@@ -54,4 +55,6 @@ public class News {
     public void setDatePublication(LocalDate datePublication) {
         this.datePublication = datePublication;
     }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }
