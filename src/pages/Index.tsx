@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Layout from "@/components/Layout";
 import { API_BASE_URL } from "@/lib/api";
+import { useImages } from "@/hooks/useImages";
 import heroImage from "@/assets/hero-mamadou.jpg";
 import actionRally from "@/assets/action-rally.jpg";
 import actionEducation from "@/assets/action-education.jpg";
@@ -39,6 +40,7 @@ const pillars = [
 ];
 
 const Index = () => {
+  const images = useImages();
   const [articles, setArticles] = useState<any[]>([]);
   const [partners, setPartners] = useState<any[]>([]);
 
@@ -54,7 +56,7 @@ const Index = () => {
         {/* Background Image */}
         <div className="absolute inset-0">
           <img
-            src={heroImage}
+            src={images["hero"] || heroImage}
             alt="Mamadou Guey"
             className="w-full h-full object-cover object-top"
           />
@@ -207,7 +209,7 @@ const Index = () => {
             >
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src={heroImage}
+                  src={images["hero"] || heroImage}
                   alt="Mamadou Guey"
                   className="w-full aspect-[4/5] object-cover object-top"
                 />

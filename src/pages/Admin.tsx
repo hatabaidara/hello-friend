@@ -12,7 +12,7 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { API_BASE_URL } from "@/lib/api";
 
-type Tab = "analytics" | "members" | "articles" | "partners" | "gallery";
+type Tab = "analytics" | "members" | "articles" | "partners" | "gallery" | "images";
 
 
 const uploadImage = async (file: File): Promise<string> => {
@@ -37,6 +37,7 @@ const Admin = () => {
     { key: "articles", label: "Articles", icon: Newspaper },
     { key: "partners", label: "Partenaires", icon: Handshake },
     { key: "gallery", label: "Galerie", icon: ImageIcon },
+    { key: "images", label: "Images site", icon: ImageIcon },
   ];
   return (
     <Layout>
@@ -63,6 +64,7 @@ const Admin = () => {
           {tab === "articles" && <ArticlesTab />}
           {tab === "partners" && <PartnersTab />}
           {tab === "gallery" && <GalleryTab />}
+          {tab === "images" && <SiteImagesTab />}
         </div>
       </section>
     </Layout>
@@ -442,6 +444,81 @@ const GalleryTab = () => {
           </div>
         ))}
         {items.length === 0 && <p className="col-span-4 text-center text-muted-foreground py-12">Aucune image. Ajoutez-en une !</p>}
+      </div>
+    </div>
+  );
+};
+
+const SITE_IMAGES = [
+  { cle: "hero", description: "Photo principale (page Accueil)" },
+  { cle: "biographie", description: "Photo Biographie" },
+  { cle: "action-rally", description: "Image Action Rassemblement" },
+  { cle: "action-education", description: "Image Action Education" },
+  { cle: "action-health", description: "Image Action Sante" },
+];
+
+const SiteImagesTab = () => {
+  const [currentImages, setCurrentImages] = useState<Record<string, string>>({});
+  const [uploading, setUploading] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/site-images`)
+      .then(r => r.json())
+      .then((data: any[]) => {
+        const map: Record<string, string> = {};
+        data.forEach(img => { map[img.cle] = img.imageUrl; });
+        setCurrentImages(map);
+      }).catch(() => {});
+  }, []);
+
+  const handleUpload = async (cle: string, description: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(cle);
+    const url = await uploadImage(file);
+    const res = await fetch(`${API_BASE_URL}/api/site-images`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Basic " + getAuth() },
+      body: JSON.stringify({ cle, imageUrl: url, description }),
+    });
+    if (res.ok) {
+      setCurrentImages(prev => ({ ...prev, [cle]: url }));
+      toast({ title: "Image mise a jour !" });
+    } else {
+      toast({ title: "Erreur", variant: "destructive" });
+    }
+    setUploading(null);
+  };
+
+  return (
+    <div>
+      <h2 className="font-display text-2xl font-bold text-foreground mb-2">Images du site</h2>
+      <p className="text-muted-foreground mb-6">Remplacez les images statiques par vos propres photos.</p>
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {SITE_IMAGES.map(({ cle, description }) => (
+          <div key={cle} className="bg-white rounded-2xl p-5 shadow-sm border border-green-100">
+            <div className="aspect-video rounded-xl overflow-hidden bg-green-50 mb-4">
+              {currentImages[cle] ? (
+                <img src={currentImages[cle]} alt={description} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <ImageIcon className="w-10 h-10 text-green-200" />
+                </div>
+              )}
+            </div>
+            <p className="font-medium text-sm text-foreground mb-1">{description}</p>
+            <p className="text-xs text-muted-foreground mb-3">Cle: {cle}</p>
+            <label className="block">
+              <span className="sr-only">Choisir une image</span>
+              <input type="file" accept="image/*"
+                onChange={(e) => handleUpload(cle, description, e)}
+                className="w-full text-sm border rounded-lg p-2 cursor-pointer"
+                disabled={uploading === cle} />
+            </label>
+            {uploading === cle && <p className="text-xs text-primary mt-1">Upload en cours...</p>}
+          </div>
+        ))}
       </div>
     </div>
   );
