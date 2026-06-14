@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/Layout";
 import { API_BASE_URL } from "@/lib/api";
+import { useImages } from "@/hooks/useImages";
 import { Link } from "react-router-dom";
 import actionRally from "@/assets/action-rally.jpg";
 
 const Actualites = () => {
+  const images = useImages();
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newsletterEmail, setNewsletterEmail] = useState("");
@@ -57,7 +59,7 @@ const Actualites = () => {
               <motion.article initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}
                 className="grid lg:grid-cols-2 gap-8 items-center">
                 <div className="relative rounded-2xl overflow-hidden">
-                  <img src={actionRally} alt={articles[0].titre} className="w-full aspect-video object-cover" />
+                  <img src={images["action-rally"] || actionRally} alt={articles[0].titre} className="w-full aspect-video object-cover" />
                   <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">A la une</div>
                 </div>
                 <div>
