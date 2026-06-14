@@ -34,6 +34,7 @@ public class NewsService {
         news.setTitre(updated.getTitre());
         news.setContenu(updated.getContenu());
         if (updated.getDatePublication() != null) news.setDatePublication(updated.getDatePublication());
+        if (updated.getImageUrl() != null) news.setImageUrl(updated.getImageUrl());
         return newsRepository.save(news);
     }
     public void deleteNews(Long id) {
