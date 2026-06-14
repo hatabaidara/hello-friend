@@ -3,20 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import Layout from "@/components/Layout";
 import { API_BASE_URL } from "@/lib/api";
-import actionRally from "@/assets/action-rally.jpg";
-import actionEducation from "@/assets/action-education.jpg";
-import actionHealth from "@/assets/action-health.jpg";
-import heroImage from "@/assets/hero-mamadou.jpg";
 
-const staticItems = [
-  { id: "s1", type: "image", src: actionRally, titre: "Rassemblement a Dakar", categorie: "Evenements", imageUrl: actionRally },
-  { id: "s2", type: "image", src: actionEducation, titre: "Formation professionnelle", categorie: "Education", imageUrl: actionEducation },
-  { id: "s3", type: "image", src: actionHealth, titre: "Caravane sante", categorie: "Sante", imageUrl: actionHealth },
-  { id: "s4", type: "image", src: heroImage, titre: "Mamadou Guey", categorie: "Portrait", imageUrl: heroImage },
-];
+
 
 const Galerie = () => {
-  const [items, setItems] = useState<any[]>(staticItems);
+  const [items, setItems] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("Tous");
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [categories, setCategories] = useState(["Tous", "Evenements", "Education", "Sante", "Portrait"]);
@@ -25,11 +16,10 @@ const Galerie = () => {
     fetch(`${API_BASE_URL}/api/gallery`)
       .then(r => r.json())
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          const all = [...staticItems, ...data];
-          setItems(all);
-          const cats = ["Tous", ...new Set(all.map((i: any) => i.categorie).filter(Boolean))];
-          setCategories(cats);
+        if (Array.isArray(data)) {
+          setItems(data);
+          const cats = ["Tous", ...new Set(data.map((i: any) => i.categorie).filter(Boolean))];
+          if (cats.length > 1) setCategories(cats);
         }
       }).catch(() => {});
   }, []);
