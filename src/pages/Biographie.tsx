@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useImages } from "@/hooks/useImages";
 import { GraduationCap, Users, HeartPulse, Award, Globe, Target } from "lucide-react";
 import Layout from "@/components/Layout";
 import heroImage from "@/assets/hero-mamadou.jpg";
@@ -45,6 +46,7 @@ const timeline = [
 ];
 
 const Biographie = () => {
+  const images = useImages();
   return (
     <Layout>
       {/* Hero Section */}
@@ -81,7 +83,7 @@ const Biographie = () => {
             >
               <div className="relative rounded-2xl overflow-hidden shadow-2xl">
                 <img
-                  src={heroImage}
+                  src={images["biographie"] || heroImage}
                   alt="Mamadou Guey"
                   className="w-full aspect-[4/5] object-cover object-top"
                 />
